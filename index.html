@@ -136,6 +136,21 @@
   .actions button.primary{background:var(--brand);color:#fff;border-color:var(--brand);}
   .actions button:hover{transform:translateY(-1px);box-shadow:var(--shadow);}
 
+  .sbtn{display:block;width:100%;padding:12px;background:transparent;color:var(--brand2);
+    border:1px solid var(--brand2);border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin:-8px 0 20px;transition:.15s;}
+  .sbtn:hover{background:rgba(78,205,196,.12);transform:translateY(-1px);}
+  .plan-card{display:flex;align-items:center;gap:12px;background:var(--soft);border:1px solid var(--line);
+    border-radius:12px;padding:12px 14px;margin:10px 0;}
+  .plan-card .pc-main{flex:1;min-width:0;}
+  .plan-card .pc-name{font-size:15px;font-weight:700;color:var(--ink);}
+  .plan-card .pc-sub{font-size:12px;color:var(--sub);margin-top:3px;}
+  .plan-card .pc-mods{font-size:12px;color:var(--brand2);margin-top:4px;}
+  .plan-card .pc-act{display:flex;flex-direction:column;gap:6px;}
+  .plan-card .pc-act button{padding:7px 16px;border-radius:9px;border:1px solid var(--brand);background:var(--brand);
+    color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;}
+  .plan-card .pc-act button.del{background:transparent;border-color:var(--line);color:var(--muted);}
+  .plan-card .pc-act button:hover{transform:translateY(-1px);}
+
   .hook{background:#0c1625;border:1px solid var(--line);border-radius:16px;padding:22px 18px;text-align:center;margin-top:24px;box-shadow:var(--shadow);}
   .hook h3{margin:0 0 8px;color:var(--brand);font-size:17px;}
   .hook p{margin:6px 0;font-size:14px;color:var(--sub);}
@@ -263,9 +278,16 @@
   </div>
 
   <button class="btn" onclick="generate()">生成我的点位清单 →</button>
+  <button class="sbtn" onclick="savePlan()">💾 保存此方案到本机</button>
 
   <div id="result">
     <div class="empty">填完上面三步，点按钮就能看到你的专属清单和图上标注。</div>
+  </div>
+
+  <div class="step" id="myPlansStep">
+    <h2><span class="n">📂</span>我的方案（本机保存）</h2>
+    <p class="hint">保存过的户型配置存在这台手机/电脑上，下次打开不用重填。换设备不互通，重要方案请导出 PDF 或截图留存。</p>
+    <div id="planListBox"></div>
   </div>
 
   <footer>本工具由「侯哥全屋智能」提供 · 仅作自测参考，落地请以现场勘测方案为准</footer>
@@ -684,6 +706,74 @@ function applyState(st){
   document.querySelectorAll('.m').forEach(c=>c.checked=Array.isArray(st.mods)&&st.mods.includes(c.value));
   markers=Array.isArray(st.markers)?st.markers.slice():[];
 }
+
+/* ---------- 本地保存方案（localStorage 本机存储） ---------- */
+function collectState(name){
+  return {
+    name:name||'我的户型方案',
+    ts:Date.now(),
+    bed:val('bed'), liv:val('liv'), din:val('din'), kit:val('kit'), bath:val('bath'),
+    area:val('area'),
+    balcony:document.getElementById('balcony').value,
+    study:document.getElementById('study').value,
+    mods:sel(),
+    markers:markers.map(m=>({mod:m.mod,x:+m.x.toFixed(1),y:+m.y.toFixed(1)})),
+    planImg:planImgData
+  };
+}
+function savePlan(){
+  let name=prompt('给这份方案起个名字（如：王女士·长治某小区）','我的户型方案');
+  if(name===null) return;
+  name=(name.trim()||'我的户型方案');
+  const st=collectState(name);
+  try{
+    let arr=JSON.parse(localStorage.getItem('houge_plans')||'[]');
+    arr.push(st);
+    localStorage.setItem('houge_plans',JSON.stringify(arr));
+    renderPlanList();
+    alert('已保存到本机：'+name+'（换设备不互通，重要方案请另存 PDF）');
+  }catch(err){
+    alert('保存失败：户型图可能太大，超出本机存储上限。可去掉平面图再保存，或点「导出/打印 PDF」留存。');
+  }
+}
+function renderPlanList(){
+  const box=document.getElementById('planListBox');
+  if(!box) return;
+  let arr=[];
+  try{arr=JSON.parse(localStorage.getItem('houge_plans')||'[]');}catch(e){arr=[];}
+  if(!arr.length){ box.innerHTML='<div class="empty" style="padding:18px">还没有保存的方案。填完户型、生成清单后，点「💾 保存此方案」即可存到这里。</div>'; return; }
+  box.innerHTML=arr.map((p,i)=>{
+    const d=new Date(p.ts); const ds=(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    const modsTxt=(p.mods||[]).map(k=>MODS.find(m=>m.k===k)?.n||k).join('、')||'未勾选';
+    return '<div class="plan-card"><div class="pc-main"><div class="pc-name">'+p.name+'</div>'+
+      '<div class="pc-sub">'+p.bed+'室'+p.liv+'厅'+p.din+'餐'+p.kit+'厨'+p.bath+'卫 · '+p.area+'㎡ · '+(p.markers?p.markers.length:0)+'处标注 · '+ds+'</div>'+
+      '<div class="pc-mods">想做：'+modsTxt+'</div></div>'+
+      '<div class="pc-act"><button onclick="openPlan('+i+')">打开</button><button class="del" onclick="delPlan('+i+')">删除</button></div></div>';
+  }).join('');
+}
+function openPlan(i){
+  let arr=[];
+  try{arr=JSON.parse(localStorage.getItem('houge_plans')||'[]');}catch(e){return;}
+  const st=arr[i]; if(!st) return;
+  applyState(st);
+  if(st.planImg){
+    planImgData=st.planImg;
+    document.getElementById('planImg').src=planImgData;
+    document.getElementById('planWrap').style.display='block';
+    document.getElementById('uploadTip').textContent='已加载 ✓ 生成后可在图上点选摆放设备';
+    buildTools(); renderMarkers();
+  }
+  generate();
+  const el=document.getElementById('myPlansStep'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function delPlan(i){
+  if(!confirm('确定删除这份方案？此操作不可恢复。')) return;
+  let arr=[];
+  try{arr=JSON.parse(localStorage.getItem('houge_plans')||'[]');}catch(e){return;}
+  arr.splice(i,1);
+  localStorage.setItem('houge_plans',JSON.stringify(arr));
+  renderPlanList();
+}
 window.addEventListener('load',()=>{
   if(location.hash && location.hash.indexOf('#s=')===0){
     try{
@@ -694,6 +784,7 @@ window.addEventListener('load',()=>{
       window.scrollTo({top:document.getElementById('result').offsetTop,behavior:'smooth'});
     }catch(e){ console.warn('分享链接解析失败',e); }
   }
+  renderPlanList();
 });
 
 /* PWA：注册 Service Worker，实现可安装 + 离线可用 */

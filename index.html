@@ -166,8 +166,27 @@
     .tag.any{background:#eaf4ee;color:#27ae60;}
   }
 </style>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0f1b2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icon-192.png">
 </head>
 <body>
+
+<!-- 添加到主屏引导（PWA） -->
+<div id="pwaTip" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:99;
+  background:linear-gradient(135deg,#e87e31,#f39c4d);color:#fff;border-radius:14px;padding:12px 14px;
+  box-shadow:0 8px 30px rgba(0,0,0,.45);font-size:13px;align-items:flex-start;gap:10px">
+  <div style="font-size:22px;line-height:1">📱</div>
+  <div style="flex:1">
+    想当 App 用？点浏览器菜单 <b>「添加到主屏幕」</b>，以后像 App 一样全屏打开、还能离线。<br>
+    <span style="opacity:.92;font-size:11.5px">iPhone：Safari 分享→添加到主屏幕 · 安卓：右上角菜单→安装应用</span>
+  </div>
+  <button onclick="document.getElementById('pwaTip').style.display='none'"
+    style="background:rgba(255,255,255,.28);border:none;color:#fff;border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;align-self:flex-start">知道了</button>
+</div>
 
 <!-- SVG 图标库 -->
 <svg style="display:none">
@@ -676,6 +695,15 @@ window.addEventListener('load',()=>{
     }catch(e){ console.warn('分享链接解析失败',e); }
   }
 });
+
+/* PWA：注册 Service Worker，实现可安装 + 离线可用 */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW 注册失败',e));
+  });
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if(!isStandalone){ setTimeout(()=>{const t=document.getElementById('pwaTip'); if(t) t.style.display='flex';}, 2500); }
+}
 </script>
 </body>
 </html>

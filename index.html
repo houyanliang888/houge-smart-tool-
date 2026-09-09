@@ -149,6 +149,19 @@
   .caseCta{margin-top:14px;padding:13px;background:rgba(232,126,49,.12);border:1px solid rgba(232,126,49,.3);border-radius:12px;font-size:13px;text-align:center;color:var(--ink);line-height:1.7;}
   .caseCta b{color:var(--brand);}
   .caseTip{margin:14px 0;padding:12px;background:rgba(78,205,196,.10);border:1px solid rgba(78,205,196,.25);border-radius:12px;font-size:13px;color:var(--ink);text-align:center;line-height:1.7;}
+  .prioBox{background:linear-gradient(135deg,var(--card),#1e3350);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0;box-shadow:var(--shadow);}
+  .prioBox h3{font-size:15px;font-weight:600;margin:0 0 4px;color:var(--ink);}
+  .prioSub{font-size:12.5px;color:var(--muted);margin-bottom:6px;line-height:1.6;}
+  .prioStage{margin:14px 0 0;}
+  .prioHead{display:flex;gap:10px;align-items:flex-start;}
+  .prioNo{background:var(--brand);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none;margin-top:1px;}
+  .prioHead b{font-size:14px;color:var(--ink);}
+  .prioDesc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5;}
+  .prioStage ul{list-style:none;margin:6px 0 0;padding:0 0 0 32px;}
+  .prioStage li{font-size:13px;line-height:1.75;color:var(--sub);margin-bottom:5px;}
+  .prioStage li b{color:var(--brand);}
+  .bookRow{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
+  .bookRow span{background:rgba(78,205,196,.12);border:1px solid rgba(78,205,196,.25);color:var(--brand2);font-size:12px;padding:4px 10px;border-radius:20px;}
 
   .sbtn{display:block;width:100%;padding:12px;background:transparent;color:var(--brand2);
     border:1px solid var(--brand2);border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin:-8px 0 20px;transition:.15s;}
@@ -302,9 +315,17 @@
 
   <div class="step" id="casesStep">
     <h2><span class="n">🏡</span>真实交付案例</h2>
-    <p class="hint">没有门店，案例就是我的样板间。看看和你家户型相近的业主，钱花在哪、坑是怎么避的。</p>
+    <p class="hint">案例就是我的样板间。看看和你家户型相近的业主，钱花在哪、坑是怎么避的。</p>
     <div id="caseList"></div>
     <div class="caseCta">想看你家能做成什么样？<br>填完户型 → 生成清单 → <b>扫码找侯哥聊</b></div>
+  </div>
+
+  <div class="step" id="bookStep">
+    <h2><span class="n">📅</span>预约免费上门诊断</h2>
+    <p class="hint">带上你的户型图，我到你家现场看点位：哪些必须现在留、哪些能后补、哪些纯花冤枉钱。当面说清，不推销。</p>
+    <div class="bookRow"><span>长治本地</span><span>免费</span><span>不推销</span><span>当场给优先级建议</span></div>
+    <button class="caseBtn" onclick="bookVisit()">📅 一键复制预约信息 · 发给侯哥</button>
+    <p class="hint" style="margin-top:10px">点一下会自动复制（已带上你的户型和想做的项目），粘贴到微信发给我，补上小区和联系方式就行；或者直接扫底部二维码添加。</p>
   </div>
 
   <div class="step" id="myPlansStep">
@@ -619,7 +640,7 @@ function generate(){
   if(S.has('water')) pits.push({i:'💧',t:'净水器要留带开关的 10A 插座 + 排水，前置过滤器装在总进水处，别等贴完砖才想起来。'});
   pits.push({i:'🏠',t:'以上清单只是「自测版」，实际点位要根据你家墙体、梁位、家具布局现场定——尤其是零火线和新风/中央空调走线冲突时。'});
 
-  out.innerHTML=planHtml+summaryHtml+roomHtml+
+  out.innerHTML=planHtml+summaryHtml+roomHtml+renderPriority(S)+
     `<div class="pit"><h3>${iSvg('warn')} 侯哥的避坑提醒（开工前必看）</h3>${pits.map(p=>`<div class="pit-row"><span class="p-ico">${p.i}</span><span class="p-txt">${p.t}</span></div>`).join('')}</div>`+
     `<div class="actions">
       <button class="primary" onclick="window.print()">导出 / 打印 PDF</button>
@@ -884,6 +905,61 @@ function toggleCase(id){
   if(btn) btn.textContent=open?'展开完整案例 ▾':'收起 ▴';
 }
 renderCases();
+
+/* ===== 预算优先级：只讲顺序，不报总价 ===== */
+const MODNAME={}; MODS.forEach(m=>MODNAME[m.k]=m.n);
+const STAGES=[
+ {n:'水电开工前',d:'这步错了后期基本改不动，砸墙开槽都来不及',mods:['switch','wifi','curtain','ac','fresh','water','robot','hanger','tv']},
+ {n:'硬装收尾安装',d:'面板、锁、电机这类要装上去并调试的',mods:['switch','light','lock','curtain','hanger','tv','ac','fresh','water']},
+ {n:'入住后慢慢加',d:'不影响装修，随时能补，钱宽裕了再说',mods:['cam','sensor','voice','music','env','robot']}
+];
+const STAGE_ACT={
+ switch:{1:'所有开关底盒留好零线（没零线后期换智能开关要多花钱，严重的装不了）',2:'智能开关面板安装 + 场景联动调试'},
+ wifi:{1:'弱电箱换大 + 每个房间拉网线（WiFi 再强也不如网线稳）'},
+ curtain:{1:'窗帘盒净宽留够 20cm + 顶部留电源（留窄了电机装不进）',2:'窗帘电机 + 轨道安装调试'},
+ ac:{1:'穿墙孔 + 16A 插座 + 冷凝水排放位一次定死',2:'内机安装 + 智能模块接入'},
+ fresh:{1:'主机电源 + 风管走向 + 检修口（必须和中央空调并图）',2:'风口安装 + 主机调试'},
+ water:{1:'厨下留带开关的 10A 插座 + 排水，前置过滤器装在总进水处',2:'净水器安装'},
+ robot:{1:'基站位置留上下水 + 电源（不留就得手动倒水）',3:'扫地机本体购买'},
+ hanger:{1:'吊顶内留电 + 吊杆加固',2:'晾衣机安装'},
+ tv:{1:'电视墙预埋 50 管藏线 + 隐藏插座',2:'电视/投影安装'},
+ light:{2:'灯具 + 调光模块安装'},
+ lock:{2:'智能门锁安装（门型和锁体尺寸先确认）'},
+ cam:{3:'摄像头安装（现在留了电源点位会更美观）'},
+ sensor:{3:'人体/水浸/燃气传感器布置'},
+ voice:{3:'智能音箱摆位 + 全屋场景联动配置'},
+ music:{3:'背景音乐喇叭（吊顶内预留过效果更好）'},
+ env:{3:'温湿度/空气质量传感器，联动新风和空调'}
+};
+function renderPriority(S){
+  let h='<div class="prioBox"><h3>钱该怎么花 · 建议分三步走</h3><div class="prioSub">先做后期改不了的，再做要用但能等的，最后做随时能加的。顺序比总价重要。</div>';
+  STAGES.forEach((st,idx)=>{
+    const n=idx+1;
+    const items=[];
+    st.mods.forEach(m=>{ if(S.has(m)&&STAGE_ACT[m]&&STAGE_ACT[m][n]) items.push('<li><b>'+(MODNAME[m]||m)+'：</b>'+STAGE_ACT[m][n]+'</li>'); });
+    if(!items.length) return;
+    h+='<div class="prioStage"><div class="prioHead"><span class="prioNo">'+n+'</span><div><b>第 '+n+' 步 · '+st.n+'</b><div class="prioDesc">'+st.d+'</div></div></div><ul>'+items.join('')+'</ul></div>';
+  });
+  return h+'</div>';
+}
+function bookVisit(){
+  try{
+    const g=id=>{const e=document.getElementById(id);return e?e.value:'';};
+    const mods=[...document.querySelectorAll('.m')].filter(c=>c.checked).map(c=>MODNAME[c.value]||c.value);
+    const layout=g('bed')+'室'+g('liv')+'厅'+g('kit')+'厨'+g('bath')+'卫'+(g('area')?' · '+g('area')+'㎡':'');
+    const txt='【预约上门诊断 · 侯哥全屋智能】\n'
+      +'小区：______（请填写）\n'
+      +'户型：'+(layout||'______（请填写）')+'\n'
+      +'交房/开工时间：______（请填写）\n'
+      +'想做的：'+(mods.length?mods.join('、'):'还没定，想先听听建议')+'\n'
+      +'联系方式：______（请填写）\n'
+      +'—— 我已在自测工具生成点位清单，想预约 1 对 1 上门诊断。';
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(()=>alert('预约信息已复制！\n粘贴到微信发给我，补上小区和联系方式即可。'))
+        .catch(()=>prompt('复制失败，请手动复制下面内容：',txt));
+    }else{ prompt('请手动复制下面内容发给侯哥：',txt); }
+  }catch(e){ alert('预约信息生成失败，可直接扫底部二维码添加侯哥微信。'); }
+}
 </script>
 </body>
 </html>

@@ -135,20 +135,7 @@
     background:transparent;color:var(--brand);font-size:14px;font-weight:700;cursor:pointer;transition:.15s;}
   .actions button.primary{background:var(--brand);color:#fff;border-color:var(--brand);}
   .actions button:hover{transform:translateY(-1px);box-shadow:var(--shadow);}
-  .caseCard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0;}
-  .caseTag{display:inline-block;background:var(--brand);color:#fff;font-size:12px;padding:3px 10px;border-radius:20px;}
-  .caseArea{font-size:13px;color:var(--sub);margin:8px 0 10px;}
-  .caseRow{font-size:13px;line-height:1.7;margin:9px 0;color:var(--ink);}
-  .caseRow b{color:var(--brand);}
-  .caseOl{margin:6px 0 6px 18px;padding:0;}
-  .caseOl li{font-size:13px;line-height:1.8;color:var(--sub);}
-  .caseMore{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);}
-  .caseBtn{background:transparent;border:1px solid var(--brand);color:var(--brand);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;margin-top:10px;width:100%;}
-  .casePh{display:flex;gap:8px;margin-top:12px;}
-  .casePh span{flex:1;height:70px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);background:rgba(255,255,255,.02);}
-  .caseCta{margin-top:14px;padding:13px;background:rgba(232,126,49,.12);border:1px solid rgba(232,126,49,.3);border-radius:12px;font-size:13px;text-align:center;color:var(--ink);line-height:1.7;}
-  .caseCta b{color:var(--brand);}
-  .caseTip{margin:14px 0;padding:12px;background:rgba(78,205,196,.10);border:1px solid rgba(78,205,196,.25);border-radius:12px;font-size:13px;color:var(--ink);text-align:center;line-height:1.7;}
+  .bookBtn{background:transparent;border:1px solid var(--brand);color:var(--brand);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;margin-top:10px;width:100%;}
   .prioBox{background:linear-gradient(135deg,var(--card),#1e3350);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0;box-shadow:var(--shadow);}
   .prioBox h3{font-size:15px;font-weight:600;margin:0 0 4px;color:var(--ink);}
   .prioSub{font-size:12.5px;color:var(--muted);margin-bottom:6px;line-height:1.6;}
@@ -313,18 +300,11 @@
     <div class="empty">填完上面三步，点按钮就能看到你的专属清单和图上标注。</div>
   </div>
 
-  <div class="step" id="casesStep">
-    <h2><span class="n">🏡</span>真实交付案例</h2>
-    <p class="hint">案例就是我的样板间。看看和你家户型相近的业主，钱花在哪、坑是怎么避的。</p>
-    <div id="caseList"></div>
-    <div class="caseCta">想看你家能做成什么样？<br>填完户型 → 生成清单 → <b>扫码找侯哥聊</b></div>
-  </div>
-
   <div class="step" id="bookStep">
     <h2><span class="n">📅</span>预约免费上门诊断</h2>
     <p class="hint">带上你的户型图，我到你家现场看点位：哪些必须现在留、哪些能后补、哪些纯花冤枉钱。当面说清，不推销。</p>
     <div class="bookRow"><span>长治本地</span><span>免费</span><span>不推销</span><span>当场给优先级建议</span></div>
-    <button class="caseBtn" onclick="bookVisit()">📅 一键复制预约信息 · 发给侯哥</button>
+    <button class="bookBtn" onclick="bookVisit()">📅 一键复制预约信息 · 发给侯哥</button>
     <p class="hint" style="margin-top:10px">点一下会自动复制（已带上你的户型和想做的项目），粘贴到微信发给我，补上小区和联系方式就行；或者直接扫底部二维码添加。</p>
   </div>
 
@@ -647,7 +627,6 @@ function generate(){
       <button onclick="copyText()">复制清单文本</button>
       <button onclick="sharePlan()" style="border-color:var(--brand2);color:var(--brand2)">📤 分享给侯哥</button>
     </div>`+
-    `<div class="caseTip">想看看别人家怎么装的？往下翻「🏡 真实交付案例」，看同户型业主钱花在哪、坑怎么避的。</div>`+
     `<div class="hook">
       <h3>这份清单只是起点</h3>
       <p>点位留错一个，后期加装的人工+材料可能比你想象贵好几倍。</p>
@@ -853,58 +832,6 @@ function downloadHtml(){
     setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   }catch(e){ alert('下载失败，请改用浏览器菜单「另存为」并手动加 .html 后缀'); }
 }
-
-/* ===== 案例库数据：把下面的内容替换成你的真实交付案例 =====
-   tag    户型标签（如"三室两厅 · 120㎡"）
-   area   小区/区域（写真实小区名，客户更有代入感）
-   worry  业主当时的核心顾虑
-   did    最终做了什么（按优先级顺序写，别罗列设备）
-   spend  钱花在哪（只讲顺序和取舍，不写总价）
-   avoid  避开了什么坑
-   voice  业主一句话反馈
-   photos 现场照片路径数组（留空则显示占位框，后面补图）
-====================================================== */
-const CASES=[
- {id:'c1',tag:'三室两厅 · 120㎡',area:'【示例】长治某小区 · 请替换成真实小区名',
-  worry:'预算不算宽裕，最怕钱花了用不起来，也怕被当韭菜。',
-  did:['水电阶段先把零火线和网线留到位（这步错了后期改不动）','客厅+主卧智能开关与调光','入户智能锁','客厅电动窗帘（窗帘盒留到 20cm）','厨房燃气报警 + 卫生间水浸'],
-  spend:'大头压在后期改不了的部分：线、零火线、窗帘盒。能后补的设备先不急。顺序比总价重要。',
-  avoid:'原设计窗帘盒只有 10cm，电机装不进去，开工前改成 20cm；弱电箱太小，提前换了大箱体。',
-  voice:'最满意的是开关位置顺手，老人小孩不用学就会用。',photos:[]},
- {id:'c2',tag:'两室一厅 · 89㎡',area:'【示例】长治某小区 · 请替换成真实小区名',
-  worry:'小户型，不想堆设备，只想解决几个真正烦人的事。',
-  did:['入户智能锁（出门不用带钥匙）','客厅+主卧智能开关','卧室电动窗帘','阳台水浸 + 摄像头'],
-  spend:'小户型更该把钱花在天天用得上的地方：锁、开关、窗帘。传感器和氛围灯后面慢慢加。',
-  avoid:'阳台没留下水坡度，扫地机基站排不了水，改了地漏位置；开关底盒没留零线，及时返工。',
-  voice:'东西不多，但每天都在用，这才叫值。',photos:[]}
-];
-function renderCases(){
-  const box=document.getElementById('caseList'); if(!box) return;
-  box.innerHTML=CASES.map(c=>`
-    <div class="caseCard">
-      <span class="caseTag">${c.tag}</span>
-      <div class="caseArea">${c.area}</div>
-      <div class="caseRow"><b>业主顾虑：</b>${c.worry}</div>
-      <div class="caseRow"><b>优先级顺序：</b></div>
-      <ol class="caseOl">${c.did.slice(0,2).map(d=>'<li>'+d+'</li>').join('')}</ol>
-      <div class="caseMore" id="caseMore_${c.id}">
-        <ol class="caseOl" start="3">${c.did.slice(2).map(d=>'<li>'+d+'</li>').join('')}</ol>
-        <div class="caseRow"><b>钱花在哪：</b>${c.spend}</div>
-        <div class="caseRow"><b>避开的坑：</b>${c.avoid}</div>
-        <div class="caseRow"><b>业主反馈：</b>${c.voice}</div>
-        <div class="casePh">${c.photos.length?c.photos.map(p=>'<img src="'+p+'" style="flex:1;height:70px;object-fit:cover;border-radius:10px">').join(''):'<span>现场照片 1</span><span>现场照片 2</span><span>现场照片 3</span>'}</div>
-      </div>
-      <button class="caseBtn" onclick="toggleCase('${c.id}')">展开完整案例 ▾</button>
-    </div>`).join('');
-}
-function toggleCase(id){
-  const el=document.getElementById('caseMore_'+id); if(!el) return;
-  const btn=el.parentElement?el.parentElement.querySelector('.caseBtn'):null;
-  const open=el.style.display==='block';
-  el.style.display=open?'none':'block';
-  if(btn) btn.textContent=open?'展开完整案例 ▾':'收起 ▴';
-}
-renderCases();
 
 /* ===== 预算优先级：只讲顺序，不报总价 ===== */
 const MODNAME={}; MODS.forEach(m=>MODNAME[m.k]=m.n);

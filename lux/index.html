@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#16243f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="照度计算器">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>照度计算器 Pro · 侯哥智改</title>
+<style>
+  :root{
+    --navy:#16243f;
+    --navy-2:#1f3563;
+    --navy-3:#2b467d;
+    --orange:#ff7a18;
+    --orange-2:#ff9d4d;
+    --orange-soft:#fff0e6;
+    --bg:#eef1f6;
+    --card:#ffffff;
+    --line:#e6ebf2;
+    --txt:#1c2533;
+    --txt-2:#697584;
+    --txt-3:#9aa6b5;
+    --ok:#119a52;
+    --warn:#e0531a;
+    --low:#c0392b;
+    --shadow:0 6px 22px rgba(22,36,63,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased}
+  .app{display:flex;min-height:100vh}
+
+  /* 侧栏 */
+  .side{width:236px;background:linear-gradient(170deg,var(--navy),var(--navy-2));color:#fff;padding:22px 14px;flex:none;position:sticky;top:0;height:100vh;overflow:auto}
+  .brand{display:flex;align-items:center;gap:11px;padding:0 8px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .brand .logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--orange),var(--orange-2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:21px;box-shadow:0 4px 12px rgba(255,122,24,.4)}
+  .brand b{font-size:15px;letter-spacing:.5px;display:block}
+  .brand span{font-size:10.5px;opacity:.6}
+  .nav{margin-top:14px;display:flex;flex-direction:column;gap:3px}
+  .nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;color:rgba(255,255,255,.72);padding:11px 12px;border-radius:10px;font-size:13.5px;cursor:pointer;transition:.15s;font-family:inherit}
+  .nav button svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7}
+  .nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+  .nav button.active{background:rgba(255,122,24,.16);color:#fff;box-shadow:inset 3px 0 0 var(--orange)}
+  .side .foot{margin-top:18px;padding:12px 10px;font-size:10.5px;color:rgba(255,255,255,.45);line-height:1.6;border-top:1px solid rgba(255,255,255,.08)}
+
+  /* 主区 */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:15px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+  .topbar h1{font-size:17px;color:var(--navy);font-weight:700}
+  .topbar .sub{font-size:12px;color:var(--txt-3);margin-top:2px}
+  .topbar .badge{background:var(--orange-soft);color:#b8520a;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px}
+  .content{padding:24px 26px 60px;max-width:920px;width:100%;margin:0 auto}
+
+  .panel{display:none}
+  .panel.active{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .card h2{font-size:15px;color:var(--navy);margin-bottom:16px;display:flex;align-items:center;gap:9px}
+  .card h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--orange)}
+  .card h2 .hint{margin-left:auto;font-size:11.5px;color:var(--txt-3);font-weight:400}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:15px}
+  .field label{display:block;font-size:12px;color:var(--txt-2);margin-bottom:6px}
+  .field input,.field select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;color:var(--txt);background:#fbfcfe;transition:.15s;font-family:inherit}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:0 0 0 3px rgba(255,122,24,.1)}
+  .unit{font-size:11px;color:var(--txt-3);margin-left:3px}
+  .row{display:flex;align-items:center;gap:9px;margin-top:6px;flex-wrap:wrap}
+  .row input[type=checkbox]{width:16px;height:16px;accent-color:var(--orange)}
+  .row label{font-size:13px;color:var(--txt)}
+
+  .result{margin-top:18px;background:linear-gradient(135deg,#f7f9fd,#eef3fb);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .result .big{font-size:40px;font-weight:800;line-height:1;background:linear-gradient(120deg,var(--navy),var(--navy-3));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .result .big small{font-size:14px;font-weight:700;-webkit-text-fill-color:var(--txt-2);color:var(--txt-2);margin-left:6px}
+  .sub{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:20px;padding:7px 13px;font-size:12px;color:var(--txt-2);box-shadow:0 1px 2px rgba(22,36,63,.03)}
+  .chip b{color:var(--navy);font-weight:700}
+  .verdict{margin-top:15px;padding:12px 15px;border-radius:11px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+  .verdict.ok{background:#e7f7ee;color:var(--ok);border:1px solid #bce9cc}
+  .verdict.warn{background:#fff1e6;color:var(--warn);border:1px solid #ffd0ad}
+  .verdict.low{background:#fdeceb;color:var(--low);border:1px solid #f3c2bd}
+  .verdict.idle{background:#f1f4f8;color:var(--txt-2);border:1px solid var(--line)}
+  .bar{height:9px;border-radius:6px;background:#e4e9f1;margin-top:14px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--orange),var(--orange-2));border-radius:6px;transition:width .35s}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--txt-2);font-weight:600;background:#fafbfe;font-size:12px}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f8fafd}
+  .tag{font-size:11px;padding:3px 9px;border-radius:11px;background:var(--orange-soft);color:#b8520a;font-weight:600}
+
+  .note{font-size:12px;color:var(--txt-2);margin-top:14px;padding-left:13px;border-left:3px solid var(--orange-soft);line-height:1.7}
+  .preset{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .preset button{background:#fff;border:1px solid var(--line);border-radius:18px;padding:7px 14px;font-size:12.5px;color:var(--navy);cursor:pointer;transition:.15s;font-family:inherit}
+  .preset button:hover{border-color:var(--orange);background:var(--orange-soft)}
+  .act{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;cursor:pointer;font-weight:600;font-family:inherit;transition:.15s}
+  .act:hover{background:var(--navy-3)}
+  .act.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+  .act.ghost:hover{border-color:var(--orange)}
+
+  /* ⑤ 布点图 */
+  .layout-wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:start}
+  @media(max-width:720px){.layout-wrap{grid-template-columns:1fr}.side{width:100%;height:auto;position:relative}.app{flex-direction:column}.nav{flex-direction:row;overflow-x:auto}.brand{border:none}.side .foot{display:none}.topbar{padding:13px 16px}.content{padding:16px}}
+  svg.room{width:100%;height:auto;display:block}
+  .stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+  .stat{flex:1;min-width:120px;background:#fbfcfe;border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .stat .k{font-size:11.5px;color:var(--txt-3)}
+  .stat .v{font-size:21px;font-weight:800;color:var(--navy);margin-top:3px}
+  .stat .v small{font-size:12px;color:var(--txt-2);font-weight:600}
+
+  /* ⑥ 调光场景 */
+  .scene-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+  .scene{background:#fbfcfe;border:1px solid var(--line);border-radius:14px;padding:15px 16px;position:relative;overflow:hidden;transition:.18s}
+  .scene:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:0 8px 18px rgba(255,122,24,.1)}
+  .scene .em{font-size:26px}
+  .scene .nm{font-size:14px;font-weight:700;color:var(--navy);margin:8px 0 2px}
+  .scene .lx{font-size:12px;color:var(--txt-2)}
+  .scene .lx b{color:var(--orange);font-size:16px}
+  .dim-bar{height:7px;border-radius:5px;background:#e9edf3;margin:11px 0 7px;overflow:hidden}
+  .dim-bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--orange),var(--orange-2))}
+  .scene .dim{font-size:11.5px;color:var(--txt-2)}
+  .scene .warn2{font-size:11px;color:var(--low);margin-top:5px;font-weight:600}
+  .pull{display:inline-flex;align-items:center;gap:6px;background:var(--orange-soft);color:#b8520a;font-size:12px;font-weight:700;padding:8px 14px;border-radius:10px;border:none;cursor:pointer;font-family:inherit}
+  .pull:hover{background:#ffe2cc}
+
+  /* ⑦ 主灯选型 */
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  @media(max-width:900px){.twocol{grid-template-columns:1fr}}
+  .mrec{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+  @media(max-width:720px){.mrec{grid-template-columns:1fr}}
+  .recbox{background:linear-gradient(150deg,#f7f9fc,#fff);border:1px solid var(--line);border-radius:14px;padding:16px 17px}
+  .recbox .k{font-size:11.5px;color:var(--txt-3);letter-spacing:.4px}
+  .recbox .v{font-size:27px;font-weight:800;background:linear-gradient(120deg,var(--navy),var(--navy-3));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin:4px 0 2px;line-height:1.1}
+  .recbox .v small{font-size:13px;color:var(--txt-2);-webkit-text-fill-color:var(--txt-2);font-weight:600}
+  .recbox .n{font-size:11.5px;color:var(--txt-2);line-height:1.65}
+  .recbox.alt{background:linear-gradient(150deg,#fff8f2,#fff);border-color:#ffd9bd}
+  .steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .steps .st{flex:1;min-width:92px;background:#fbfcfe;border:1px solid var(--line);border-radius:11px;padding:10px 11px}
+  .steps .st .n{font-size:10.5px;color:var(--txt-3)}
+  .steps .st .v{font-size:16px;font-weight:800;color:var(--navy);margin-top:2px}
+  .steps .st .v small{font-size:11px;color:var(--txt-2);font-weight:600}
+  table.spec{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+  table.spec th{background:#f2f5f9;color:var(--navy);font-size:11.5px;font-weight:700;text-align:left;padding:9px 10px;border-bottom:1.5px solid var(--line)}
+  table.spec td{padding:9px 10px;border-bottom:1px solid #eef1f6;color:var(--txt-2)}
+  table.spec tr:hover td{background:#fbfcfe}
+  table.spec td b{color:var(--navy);font-weight:700}
+  table.spec tr.hl td{background:var(--orange-soft)}
+  table.spec tr.hl td b{color:#b8520a}
+  .warnbox{background:#fff4f4;border:1px solid #ffd4d4;border-radius:11px;padding:11px 13px;font-size:12px;color:#a53c3c;line-height:1.7;margin-top:12px}
+  .okbox{background:#f0fbf5;border:1px solid #c6ecd8;border-radius:11px;padding:11px 13px;font-size:12px;color:#1d6b46;line-height:1.7;margin-top:12px}
+  svg.fig{width:100%;height:auto;display:block;border-radius:12px;background:#fbfcfe;border:1px solid var(--line)}
+
+  /* ⑧ 三层混光 */
+  .split{display:flex;height:34px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#fbfcfe}
+  .split > div{flex:1;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--txt-2);transition:.18s;font-weight:500}
+  .split > div.on{background:var(--navy);color:#fff}
+  .layer{border:1px solid var(--line);border-radius:13px;padding:15px 16px;background:#fff;position:relative;overflow:hidden}
+  .layer:before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+  .layer.l1:before{background:#378ADD}
+  .layer.l2:before{background:#1D9E75}
+  .layer.l3:before{background:#D4537E}
+  .layer .ttl{font-size:14px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px;margin-bottom:2px}
+  .layer .sub{font-size:11.5px;color:var(--txt-3);margin-bottom:11px}
+  .layer .kv{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px dashed #eceff3;font-size:12.5px;color:var(--txt-2)}
+  .layer .kv:last-of-type{border-bottom:none}
+  .layer .kv b{color:var(--navy);font-weight:700;font-size:13.5px}
+  .layer .kv b.big{font-size:19px}
+  .ratio-row{display:flex;height:30px;border-radius:9px;overflow:hidden;margin:12px 0 4px;font-size:11.5px;font-weight:600}
+  .ratio-row > div{display:flex;align-items:center;justify-content:center;color:#fff}
+
+  /* PWA 手机增强 */
+  *{-webkit-tap-highlight-color:transparent}
+  body{-webkit-text-size-adjust:100%}
+  @media(max-width:720px){
+    .field input,.field select{padding:12px 12px;font-size:16px}
+    .content{padding:14px 14px 64px}
+    .nav button{padding:10px 12px;white-space:nowrap}
+    .topbar h1{font-size:16px}
+    .card{padding:16px 15px}
+    .result .big{font-size:34px}
+    .grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+    .twocol{grid-template-columns:1fr}
+    .mrec{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">照</div>
+      <div><b>照度计算器 Pro</b><span>侯哥智改 · 灯光设计</span></div>
+    </div>
+    <nav class="nav">
+      <button class="active" data-t="1">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>房间平均照度</button>
+      <button data-t="2">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>单灯点照度</button>
+      <button data-t="3">
+        <svg viewBox="0 0 24 24"><path d="M4 9h16M4 15h16M10 3v18M14 3v18"/></svg>反算需要几盏</button>
+      <button data-t="4">
+        <svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>国标速查</button>
+      <button data-t="5">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.4"/><circle cx="16" cy="8" r="1.4"/><circle cx="8" cy="16" r="1.4"/><circle cx="16" cy="16" r="1.4"/></svg>布点间距图</button>
+      <button data-t="6">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3a6 6 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>智能调光场景</button>
+      <button data-t="7">
+        <svg viewBox="0 0 24 24"><path d="M8 3h8l3 5H5l3-5z"/><path d="M12 8v6"/><circle cx="12" cy="18" r="3"/></svg>主灯选型（吊灯/吸顶）</button>
+      <button data-t="8">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/></svg>三层混光（客厅）</button>
+    </nav>
+    <div class="foot">利用系数法 · IES 标准<br>离线可用 · v2.2 Pro</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">房间平均照度</h1>
+        <div class="sub" id="pageSub">输入空间与灯具参数，估算平均照度并对照国标</div>
+      </div>
+      <div class="badge">PRO</div>
+    </div>
+
+    <div class="content">
+      <!-- ① -->
+      <section class="panel active" id="p1">
+        <div class="card">
+          <h2><span class="dot"></span>空间与灯具参数</h2>
+          <div class="grid">
+            <div class="field"><label>房间长 <span class="unit">m</span></label><input id="a1_L" type="number" value="5" min="0.1" step="0.1"></div>
+            <div class="field"><label>房间宽 <span class="unit">m</span></label><input id="a1_W" type="number" value="4" min="0.1" step="0.1"></div>
+            <div class="field"><label>灯具安装高度 <span class="unit">m</span></label><input id="a1_H" type="number" value="2.6" min="0.1" step="0.1"></div>
+            <div class="field"><label>工作面高度 <span class="unit">m</span></label><input id="a1_hw" type="number" value="0.75" min="0" step="0.05"></div>
+            <div class="field"><label>灯具数量 <span class="unit">盏</span></label><input id="a1_N" type="number" value="6" min="1" step="1"></div>
+            <div class="field"><label>单灯功率 <span class="unit">W</span></label><input id="a1_P" type="number" value="9" min="0.1" step="0.5"></div>
+            <div class="field"><label>光源类型</label>
+              <select id="a1_src">
+                <option value="80">普通 LED 灯泡 (80 lm/W)</option>
+                <option value="90" selected>LED 筒灯/射灯 (90 lm/W)</option>
+                <option value="100">LED 平板灯 (100 lm/W)</option>
+                <option value="130">高光效 LED (130 lm/W)</option>
+                <option value="70">节能灯/荧光 (70 lm/W)</option>
+                <option value="12">白炽灯 (12 lm/W)</option>
+              </select>
+            </div>
+            <div class="field"><label>维护系数 MF</label>
+              <select id="a1_mf">
+                <option value="0.9">0.90 干净/新装</option>
+                <option value="0.8" selected>0.80 一般维护</option>
+                <option value="0.7">0.70 环境偏脏</option>
+                <option value="0.6">0.60 长期未清洁</option>
+              </select>
+            </div>
+            <div class="field"><label>墙面/顶棚反射率</label>
+              <select id="a1_ref">
+                <option value="1.08">亮（白墙浅顶）</option>
+                <option value="1.0" selected>中（常规装修）</option>
+                <option value="0.85">暗（深墙深色）</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <input type="checkbox" id="a1_autoUF" checked>
+            <label for="a1_autoUF">自动估算利用系数（按室形指数）</label>
+            <input id="a1_UF" type="number" value="0.55" min="0.1" max="0.95" step="0.01" style="width:88px" disabled>
+            <label for="a1_UF" style="color:var(--txt-2)">手动 UF</label>
+          </div>
+          <div class="field" style="margin-top:15px">
+            <label>房间用途（对照国标推荐值）</label>
+            <select id="a1_use">
+              <option value="100" selected>起居室·一般活动 (推荐 100 lx)</option>
+              <option value="300">起居室·阅读 / 书房 (推荐 300 lx)</option>
+              <option value="150">卧室·床头 / 餐厅 (推荐 150 lx)</option>
+              <option value="75">卧室·一般活动 (推荐 75 lx)</option>
+              <option value="100">厨房·一般 / 卫生间 (推荐 100 lx)</option>
+              <option value="150">厨房·操作台 (推荐 150 lx)</option>
+              <option value="300">办公室 / 商铺 / 教室 (推荐 300 lx)</option>
+              <option value="0">不对照（自定义）</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span class="dot"></span>计算结果</h2>
+          <div class="result">
+            <div class="big"><span id="a1_E">—</span><small>lx 平均照度</small></div>
+            <div class="sub">
+              <span class="chip">面积 <b id="a1_A">—</b> ㎡</span>
+              <span class="chip">室形指数 <b id="a1_KR">—</b></span>
+              <span class="chip">利用系数 <b id="a1_UFv">—</b></span>
+              <span class="chip">单灯 <b id="a1_phi">—</b> lm</span>
+              <span class="chip">总光通 <b id="a1_tot">—</b> lm</span>
+            </div>
+            <div class="bar"><i id="a1_bar" style="width:0%"></i></div>
+            <div class="verdict idle" id="a1_vd">输入参数后自动计算</div>
+          </div>
+          <p class="note">利用系数法为设计估算值，实际照度受灯具配光曲线、遮挡、墙面材质影响；交付前建议用手持照度计现场复核。功率换算光通量按所选光源光效估算，选购灯具以产品标称「光通量(lm)」为准。</p>
+        </div>
+      </section>
+
+      <!-- ② -->
+      <section class="panel" id="p2">
+        <div class="card">
+          <h2><span class="dot"></span>单盏灯（筒灯/射灯）点照度</h2>
+          <div class="grid">
+            <div class="field"><label>单灯功率 <span class="unit">W</span></label><input id="a2_P" type="number" value="9" min="0.1" step="0.5"></div>
+            <div class="field"><label>光源光效 <span class="unit">lm/W</span></label><input id="a2_eta" type="number" value="90" min="1" step="1"></div>
+            <div class="field"><label>光束角（全角） <span class="unit">°</span></label><input id="a2_beam" type="number" value="36" min="5" max="120" step="1"></div>
+            <div class="field"><label>安装高度 <span class="unit">m</span></label><input id="a2_H" type="number" value="2.6" min="0.1" step="0.1"></div>
+            <div class="field"><label>工作面高度 <span class="unit">m</span></label><input id="a2_hw" type="number" value="0.75" min="0" step="0.05"></div>
+            <div class="field"><label>偏移距离 r <span class="unit">m</span></label><input id="a2_r" type="number" value="0" min="0" step="0.1"></div>
+          </div>
+          <p class="note">光束角为灯具出光「全角」。r=0 表示正下方中心点；r&gt;0 表示偏离灯中心的地面点，用于看光斑落点与边缘衰减。适用于筒灯、射灯、轨道灯等定向灯具的照度池验证。</p>
+        </div>
+        <div class="card">
+          <h2><span class="dot"></span>计算结果</h2>
+          <div class="result">
+            <div class="big"><span id="a2_Ec">—</span><small>lx 中心点照度</small></div>
+            <div class="sub">
+              <span class="chip">光通量 <b id="a2_phi">—</b> lm</span>
+              <span class="chip">峰值光强 <b id="a2_I0">—</b> cd</span>
+              <span class="chip">光斑半径 <b id="a2_rspot">—</b> m</span>
+              <span class="chip">边缘照度 <b id="a2_Ee">—</b> lx</span>
+              <span class="chip">偏移点 <b id="a2_Er">—</b> lx</span>
+            </div>
+          </div>
+          <p class="note">中心照度 E₀ = I₀ / d²（d=安装高度−工作面）。光斑半径 = d·tan(光束半角)。边缘照度按余弦立方衰减估算。多灯叠加时近似相加，注意重叠区域。</p>
+        </div>
+      </section>
+
+      <!-- ③ -->
+      <section class="panel" id="p3">
+        <div class="card">
+          <h2><span class="dot"></span>反算需要多少盏灯</h2>
+          <div class="grid">
+            <div class="field"><label>房间长 <span class="unit">m</span></label><input id="a3_L" type="number" value="5" min="0.1" step="0.1"></div>
+            <div class="field"><label>房间宽 <span class="unit">m</span></label><input id="a3_W" type="number" value="4" min="0.1" step="0.1"></div>
+            <div class="field"><label>灯具安装高度 <span class="unit">m</span></label><input id="a3_H" type="number" value="2.6" min="0.1" step="0.1"></div>
+            <div class="field"><label>工作面高度 <span class="unit">m</span></label><input id="a3_hw" type="number" value="0.75" min="0" step="0.05"></div>
+            <div class="field"><label>单灯功率 <span class="unit">W</span></label><input id="a3_P" type="number" value="9" min="0.1" step="0.5"></div>
+            <div class="field"><label>光源光效 <span class="unit">lm/W</span></label><input id="a3_eta" type="number" value="90" min="1" step="1"></div>
+            <div class="field"><label>维护系数 MF</label>
+              <select id="a3_mf"><option value="0.9">0.90</option><option value="0.8" selected>0.80</option><option value="0.7">0.70</option><option value="0.6">0.60</option></select>
+            </div>
+            <div class="field"><label>墙面/顶棚反射率</label>
+              <select id="a3_ref"><option value="1.08">亮</option><option value="1.0" selected>中</option><option value="0.85">暗</option></select>
+            </div>
+            <div class="field"><label>目标照度 <span class="unit">lx</span></label><input id="a3_Et" type="number" value="150" min="1" step="10"></div>
+          </div>
+          <div class="preset">
+            <span style="font-size:12px;color:var(--txt-2);align-self:center">一键国标：</span>
+            <button data-v="100">起居100</button>
+            <button data-v="150">餐厅/操作台150</button>
+            <button data-v="300">阅读/办公300</button>
+            <button data-v="75">卧室75</button>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <input type="checkbox" id="a3_autoUF" checked>
+            <label for="a3_autoUF">自动估算利用系数</label>
+            <input id="a3_UF" type="number" value="0.55" min="0.1" max="0.95" step="0.01" style="width:88px" disabled>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span class="dot"></span>推荐数量</h2>
+          <div class="result">
+            <div class="big"><span id="a3_N">—</span><small>盏（向上取整）</small></div>
+            <div class="sub">
+              <span class="chip">面积 <b id="a3_A">—</b> ㎡</span>
+              <span class="chip">单灯 <b id="a3_phi">—</b> lm</span>
+              <span class="chip">利用系数 <b id="a3_UFv">—</b></span>
+              <span class="chip">达成 <b id="a3_Ereal">—</b> lx</span>
+            </div>
+            <p class="note" id="a3_tip" style="margin-top:14px">—</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ④ -->
+      <section class="panel" id="p4">
+        <div class="card">
+          <h2><span class="dot"></span>建筑照明设计标准 GB 50034-2013（节选）</h2>
+          <table>
+            <thead><tr><th>场所</th><th>推荐照度 (lx)</th><th>类别</th></tr></thead>
+            <tbody id="stdBody"></tbody>
+          </table>
+          <p class="note">住宅、办公、商铺常用值节选。设计时可对照「①平均照度」的达标判定。精确设计请以现行规范全文及专项标准为准。</p>
+        </div>
+      </section>
+
+      <!-- ⑤ 布点间距图 -->
+      <section class="panel" id="p5">
+        <div class="card">
+          <h2><span class="dot"></span>布点间距建议图<span class="hint">俯视平面 · 自动均布</span></h2>
+          <div class="layout-wrap">
+            <div>
+              <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+                <div class="field"><label>房间长 <span class="unit">m</span></label><input id="a5_L" type="number" value="5" min="0.5" step="0.1"></div>
+                <div class="field"><label>房间宽 <span class="unit">m</span></label><input id="a5_W" type="number" value="4" min="0.5" step="0.1"></div>
+                <div class="field"><label>灯具数量 <span class="unit">盏</span></label><input id="a5_N" type="number" value="6" min="1" step="1"></div>
+                <div class="field"><label>安装高度 <span class="unit">m</span></label><input id="a5_H" type="number" value="2.6" min="0.1" step="0.1"></div>
+              </div>
+              <div class="stat-row" style="margin-top:16px">
+                <div class="stat"><div class="k">横向间距</div><div class="v" id="a5_sx">—<small> m</small></div></div>
+                <div class="stat"><div class="k">纵向间距</div><div class="v" id="a5_sy">—<small> m</small></div></div>
+                <div class="stat"><div class="k">排布</div><div class="v" id="a5_grid">—</div></div>
+              </div>
+              <p class="note" id="a5_tip">—</p>
+            </div>
+            <div>
+              <svg class="room" id="a5_svg" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+          </div>
+          <div style="margin-top:14px"><button class="act ghost" onclick="syncFrom3()">↺ 用③的房间与灯数</button></div>
+        </div>
+      </section>
+
+      <!-- ⑥ 智能调光场景 -->
+      <section class="panel" id="p6">
+        <div class="card">
+          <h2><span class="dot"></span>智能调光场景预设<span class="hint">基于满功率平均照度</span></h2>
+          <div class="grid" style="grid-template-columns:1fr auto;align-items:end">
+            <div class="field"><label>满功率平均照度 <span class="unit">lx（即①结果，100% 输出）</span></label><input id="a6_Efull" type="number" value="300" min="1" step="1"></div>
+            <button class="pull" onclick="pullFrom1()">↺ 带入①结果</button>
+          </div>
+          <p class="note">满功率照度 = 所有灯 100% 亮度时的平均照度。每个场景给出建议目标照度与对应调光比例，可直接写进智能面板情景模式。</p>
+        </div>
+        <div class="card">
+          <h2><span class="dot"></span>情景模式一览</h2>
+          <div class="scene-grid" id="a6_grid"></div>
+        </div>
+      </section>
+
+      <!-- ⑦ 主灯选型 -->
+      <section class="panel" id="p7">
+        <div class="card">
+          <h2><span class="dot"></span>第一步：空间与主灯参数<span class="hint">先定用哪种主灯</span></h2>
+          <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+            <div class="field"><label>房间长 <span class="unit">m</span></label><input id="a7_L" type="number" value="5" min="0.5" step="0.1"></div>
+            <div class="field"><label>房间宽 <span class="unit">m</span></label><input id="a7_W" type="number" value="4" min="0.5" step="0.1"></div>
+            <div class="field"><label>层高（顶到地） <span class="unit">m</span></label><input id="a7_H" type="number" value="2.8" min="1.8" step="0.05"></div>
+            <div class="field"><label>工作面/桌面高 <span class="unit">m</span></label><input id="a7_hw" type="number" value="0.75" min="0" step="0.05"></div>
+          </div>
+
+          <div class="field"><label>主灯类型</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" id="a7_type">
+              <button class="preset" data-v="chandelier">🍽️ 餐厅吊灯</button>
+              <button class="preset on" data-v="ceiling">🔆 客厅吸顶灯</button>
+              <button class="preset" data-v="pendant">🛋️ 客厅/卧室吊灯</button>
+              <button class="preset" data-v="downlight">🔅 大平/主灯+筒灯</button>
+            </div>
+          </div>
+
+          <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+            <div class="field"><label>主灯数量 <span class="unit">盏</span></label><input id="a7_N" type="number" value="1" min="1" step="1"></div>
+            <div class="field"><label>光源光效 <span class="unit">lm/W</span></label>
+              <select id="a7_eta">
+                <option value="100">100 · 高光效一体灯体</option>
+                <option value="90" selected>90 · 普通 LED（主流）</option>
+                <option value="80">80 · 带散热/造型灯</option>
+                <option value="70">70 · 玻璃罩/多层灯罩</option>
+                <option value="120">120 · 高端一体流明</option>
+              </select>
+            </div>
+            <div class="field"><label>维护系数</label>
+              <select id="a7_mf"><option value="0.9">0.90 · 住宅新装</option><option value="0.8" selected>0.80 · 一般住宅</option><option value="0.7">0.70 · 公共场所</option></select>
+            </div>
+            <div class="field"><label>墙面反射</label>
+              <select id="a7_ref"><option value="1.08">亮（浅色墙面）</option><option value="1.0" selected>中（常规乳胶漆）</option><option value="0.85">暗（深色/深木）</option></select>
+            </div>
+          </div>
+
+          <div class="field"><label>目标照度 <span class="unit">lx</span></label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" id="a7_pres">
+              <button class="preset" data-v="75">75 卧室活动</button>
+              <button class="preset" data-v="100">100 客厅一般</button>
+              <button class="preset" data-v="150" class="on">150 餐厅/用餐</button>
+              <button class="preset" data-v="200">200 书房阅读</button>
+              <button class="preset" data-v="300">300 书写阅读</button>
+            </div>
+            <input id="a7_Et" type="number" value="150" min="30" step="10" style="margin-top:8px">
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="act ghost" onclick="syncFrom1()">↺ 带入①房间尺寸</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><span class="dot"></span>第二步：需要多大瓦数<span class="hint">按面积反算</span></h2>
+          <div class="result">
+            <div class="big"><span id="a7_Wrec">—</span><small>W 建议单灯功率</small></div>
+            <div class="chips">
+              <span class="chip">总面积 <b id="a7_A">—</b> ㎡</span>
+              <span class="chip">所需总光通 <b id="a7_need">—</b> lm</span>
+              <span class="chip">利用系数 <b id="a7_UF">—</b></span>
+              <span class="chip">实际达成 <b id="a7_Ereal">—</b> lx</span>
+              <span class="chip">建议总功率 <b id="a7_Wtot">—</b> W</span>
+            </div>
+            <div class="bar"><i id="a7_bar" style="width:0%"></i></div>
+            <div class="verdict idle" id="a7_vd">—</div>
+          </div>
+          <div class="steps">
+            <div class="st"><div class="n">推荐光通量</div><div class="v" id="a7_phi">—<small> lm/盏</small></div></div>
+            <div class="st"><div class="n">常见商品档位</div><div class="v" id="a7_tier">—</div></div>
+            <div class="st"><div class="n">每 ㎡ 配光</div><div class="v" id="a7_perm">—<small> lm/㎡</small></div></div>
+            <div class="st"><div class="n">单瓦成本</div><div class="v" id="a7_cost">—<small> 元</small></div></div>
+          </div>
+          <div id="a7_msg"></div>
+        </div>
+
+        <div class="card">
+          <h2><span class="dot"></span>第三步：该选多大尺寸<span class="hint">灯罩直径 / 灯体边长</span></h2>
+          <div class="mrec">
+            <div class="recbox">
+              <div class="k">推荐灯罩直径（圆灯）</div>
+              <div class="v" id="a7_D">—<small> mm</small></div>
+              <div class="n" id="a7_Dn">—</div>
+            </div>
+            <div class="recbox alt">
+              <div class="k">若选方形 / 长方形灯体</div>
+              <div class="v" id="a7_R">—<small> mm</small></div>
+              <div class="n" id="a7_Rn">—</div>
+            </div>
+          </div>
+          <div class="steps">
+            <div class="st"><div class="n">吊装净高（灯底到桌面）</div><div class="v" id="a7_drop">—<small> mm</small></div></div>
+            <div class="st"><div class="n">灯底离地（客厅）</div><div class="v" id="a7_h">—<small> mm</small></div></div>
+            <div class="st"><div class="n">建议主灯数量</div><div class="v" id="a7_Nrec">—<small> 盏</small></div></div>
+            <div class="st"><div class="n">配套筒灯建议</div><div class="v" id="a7_down">—<small> 盏</small></div></div>
+          </div>
+          <p class="note" id="a7_rule" style="margin-top:14px">—</p>
+        </div>
+
+        <div class="card">
+          <h2><span class="dot"></span>尺寸示意<span class="hint">俯视 / 剖面</span></h2>
+          <div class="twocol">
+            <div>
+              <p class="note" style="margin:0 0 8px">俯视 · 灯罩直径与房间比例</p>
+              <svg class="fig" id="a7_svgTop" viewBox="0 0 400 300"></svg>
+            </div>
+            <div>
+              <p class="note" style="margin:0 0 8px">剖面 · 吊装高度关系</p>
+              <svg class="fig" id="a7_svgSec" viewBox="0 0 400 300"></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><span class="dot"></span>常用主灯商品规格速查<span class="hint">按面积选直径</span></h2>
+          <table class="spec" id="a7_table"></table>
+          <p class="note">表中直径与功率为市场主流档位（吸顶灯/吊灯通用）。实际以商品标称光通量与商品尺寸为准——同一尺寸不同系列光通量差异可达 30%，下单前务必核对参数表。</p>
+        </div>
+      </section>
+
+      <!-- ⑧ 三层混光 -->
+      <section class="panel" id="p8">
+        <div class="card">
+          <h2><span class="dot"></span>第一步：房间与目标<span class="hint">先定房间，再定要多少照度</span></h2>
+          <div class="field"><label>房间类型<span class="unit">决定用哪套场景与选型规则</span></label>
+            <div class="split" id="a8_room">
+              <div data-v="living" class="on">客厅</div>
+              <div data-v="dining">餐厅</div>
+              <div data-v="bedroom">卧室</div>
+            </div>
+          </div>
+          <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+            <div class="field"><label>房间长 <span class="unit">m</span></label><input id="a8_L" type="number" value="4.2" min="0.5" step="0.1"></div>
+            <div class="field"><label>房间宽 <span class="unit">m</span></label><input id="a8_W" type="number" value="3.3" min="0.5" step="0.1"></div>
+            <div class="field"><label>装顶后净高 <span class="unit">m</span></label><input id="a8_H" type="number" value="2.8" min="2" step="0.05"></div>
+            <div class="field"><label id="a8_hwLabel">工作面高 <span class="unit">m</span></label><input id="a8_hw" type="number" value="0.75" min="0" step="0.05"></div>
+          </div>
+
+          <div class="field"><label>配置方案（决定分摊比例）</label>
+            <div class="split" id="a8_scene"></div>
+          </div>
+
+          <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+            <div class="field"><label>目标照度 <span class="unit">lx</span></label>
+              <div style="display:flex;gap:7px;flex-wrap:wrap" id="a8_pres"></div>
+              <input id="a8_Et" type="number" value="150" min="30" step="10" style="margin-top:7px">
+            </div>
+            <div class="field"><label>维护系数</label>
+              <select id="a8_mf"><option value="0.9">0.90 新装</option><option value="0.8" selected>0.80 住宅常规</option><option value="0.7">0.70 商业</option></select>
+            </div>
+          </div>
+
+          <div class="field" id="a8_cond_field"><label>灯带吊装条件<span class="unit">客厅/卧室用；餐厅灯带为柜内灯带，不计此处</span></label>
+            <select id="a8_cond">
+              <option value="1.2" selected>有吊顶 + 窗帘盒/柜体遮挡（扣 1.2m）</option>
+              <option value="0.6">有吊顶，无遮挡（扣 0.6m）</option>
+              <option value="2.0">无吊顶，扣中央空调/检修口（扣 2.0m）</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="act ghost" onclick="sync8From1()">↺ 带入①房间参数</button>
+          </div>
+          <p class="note" id="a8_mainNote" style="margin-top:12px">—</p>
+        </div>
+
+        <div class="card">
+          <h2><span class="dot"></span>第二步：三层光通分摊<span class="hint">按场景比例拆解</span></h2>
+          <div class="stat-row">
+            <div class="stat"><div class="k">总面积</div><div class="v" id="a8_A">—<small> ㎡</small></div></div>
+            <div class="stat"><div class="k">总光通需求</div><div class="v" id="a8_need">—<small> lm</small></div></div>
+            <div class="stat"><div class="k">混合利用系数</div><div class="v" id="a8_UF">—</div></div>
+          </div>
+          <div class="ratio-row" id="a8_ratio"></div>
+          <p class="note" id="a8_why" style="margin-top:8px">—</p>
+        </div>
+
+        <div class="card">
+          <h2><span class="dot"></span>第三步：各层选型结论<span class="hint">可直接抄进方案</span></h2>
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">
+            <div class="layer l1">
+              <div class="ttl"><span>◍</span><span id="a8_mainLabel">主灯 · 基础层</span></div>
+              <div class="sub">保证整体均匀不刺眼</div>
+              <div class="kv"><span>分摊光通</span><b id="a8_p1">—</b></div>
+              <div class="kv"><span>灯罩直径</span><b class="big" id="a8_D">—</b></div>
+              <div class="kv"><span>建议功率</span><b id="a8_W1">—</b></div>
+              <div class="kv"><span>实选商品</span><b id="a8_W1r">—</b></div>
+            </div>
+            <div class="layer l2">
+              <div class="ttl"><span>◉</span><span id="a8_downLabel">筒射灯 · 重点层</span></div>
+              <div class="sub">照亮重点区域与装饰</div>
+              <div class="kv"><span>分摊光通</span><b id="a8_p2">—</b></div>
+              <div class="kv"><span>照度算需</span><b class="big" id="a8_N2a">—</b></div>
+              <div class="kv"><span>间距上限校核</span><b id="a8_N2b">—</b></div>
+              <div class="kv"><span>建议装</span><b id="a8_N2">—</b></div>
+            </div>
+            <div class="layer l3">
+              <div class="ttl"><span>≈</span>灯带 · 氛围层</div>
+              <div class="sub">洗墙、勾轮廓、调暗角</div>
+              <div class="kv"><span>分摊光通</span><b id="a8_p3">—</b></div>
+              <div class="kv"><span>可用长度</span><b class="big" id="a8_len">—</b></div>
+              <div class="n" id="a8_lenNote" style="font-size:11px;color:var(--txt-3);margin:4px 0 8px">—</div>
+              <div class="kv"><span>功率密度</span><b id="a8_wpm">—</b></div>
+              <div class="kv"><span>选型档位</span><b id="a8_tier">—</b></div>
+            </div>
+          </div>
+          <div class="stat-row" style="margin-top:16px">
+            <div class="stat"><div class="k">回代实际照度</div><div class="v" id="a8_Ereal">—<small> lx</small></div></div>
+            <div class="stat"><div class="k">达标率</div><div class="v" id="a8_rate">—</div></div>
+            <div class="stat"><div class="k">光通合计</div><div class="v" id="a8_ptot">—<small> lm</small></div></div>
+            <div class="stat"><div class="k">功率合计</div><div class="v" id="a8_Wtot">—<small> W</small></div></div>
+          </div>
+          <div id="a8_msg"></div>
+        </div>
+
+        <div class="card">
+          <h2><span class="dot"></span>布点示意<span class="hint">俯视 · 主灯 + 辅灯 + 灯带</span></h2>
+          <svg class="fig" id="a8_svg" viewBox="0 0 640 340"></svg>
+          <p class="note" id="a8_tip" style="margin-top:10px">—</p>
+        </div>
+
+        <div class="card">
+          <h2><span class="dot"></span>公式速查卡<span class="hint">现场直接用</span></h2>
+          <table class="spec" id="a8_formula"></table>
+          <p class="note">筒灯间距上限 = 装顶净高 × 0.9~1.2。回代照度落在目标的 80%~120% 为合格。主灯装高后向下配光，加功率并不能改善四角偏暗——要更亮请加筒灯。</p>
+        </div>
+      </section>
+
+      <div class="card" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="act" onclick="window.print()">🖨 打印 / 存 PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const UF_TABLE = [[0.6,0.35],[0.8,0.42],[1.0,0.48],[1.25,0.53],[1.5,0.57],[2.0,0.63],[2.5,0.67],[3.0,0.71],[4.0,0.76],[5.0,0.80]];
+function ufFromKR(kr){
+  if(kr<=UF_TABLE[0][0]) return UF_TABLE[0][1];
+  if(kr>=UF_TABLE[UF_TABLE.length-1][0]) return UF_TABLE[UF_TABLE.length-1][1];
+  for(let i=0;i<UF_TABLE.length-1;i++){const[a,v1]=UF_TABLE[i],[b,v2]=UF_TABLE[i+1];if(kr>=a&&kr<=b)return v1+(v2-v1)*(kr-a)/(b-a);}
+  return 0.55;
+}
+const bind=(id,fn)=>{const e=$(id);if(e)e.addEventListener('input',fn);};
+const watch=(ids,fn)=>ids.forEach(id=>bind(id,fn));
+
+/* ① */
+function calc1(){
+  const L=+$('a1_L').value,W=+$('a1_W').value,H=+$('a1_H').value,hw=+$('a1_hw').value,
+        N=+$('a1_N').value,P=+$('a1_P').value,eta=+$('a1_src').value,
+        MF=+$('a1_mf').value,ref=+$('a1_ref').value,use=+$('a1_use').value;
+  const A=L*W,Hm=Math.max(0.1,H-hw),KR=(L*W)/(Hm*(L+W));
+  let UF=+$('a1_UF').value;if($('a1_autoUF').checked)UF=Math.min(0.92,Math.max(0.2,ufFromKR(KR)*ref));
+  const phi=P*eta,tot=N*phi,E=N*phi*UF*MF/A;
+  $('a1_A').textContent=A.toFixed(1);$('a1_KR').textContent=KR.toFixed(2);
+  $('a1_UFv').textContent=UF.toFixed(2);$('a1_phi').textContent=Math.round(phi);
+  $('a1_tot').textContent=Math.round(tot);$('a1_E').textContent=Math.round(E);
+  const vd=$('a1_vd');
+  if(use>0){const r=E/use;$('a1_bar').style.width=Math.min(100,r*100)+'%';
+    if(r>=0.9&&r<=1.25){vd.className='verdict ok';vd.textContent='✓ 达标：≈推荐值 '+use+' lx（误差±25%内）';}
+    else if(r<0.9){vd.className='verdict low';vd.textContent='✕ 偏暗：仅达推荐 '+use+' lx 的 '+(r*100).toFixed(0)+'%，建议加灯或换高光效';}
+    else{vd.className='verdict warn';vd.textContent='⚠ 偏亮：达推荐 '+use+' lx 的 '+(r*100).toFixed(0)+'%，可节能或加调光';}
+  }else{$('a1_bar').style.width='0%';vd.className='verdict idle';vd.textContent='自定义模式：平均照度 '+Math.round(E)+' lx';}
+}
+watch(['a1_L','a1_W','a1_H','a1_hw','a1_N','a1_P','a1_src','a1_mf','a1_ref','a1_use','a1_UF'],calc1);
+$('a1_autoUF').addEventListener('change',e=>{$('a1_UF').disabled=e.target.checked;calc1();});
+
+/* ② */
+function calc2(){
+  const P=+$('a2_P').value,eta=+$('a2_eta').value,beam=+$('a2_beam').value,
+        H=+$('a2_H').value,hw=+$('a2_hw').value,r=+$('a2_r').value;
+  const phi=P*eta,d=Math.max(0.1,H-hw),half=beam/2*Math.PI/180;
+  const omega=2*Math.PI*(1-Math.cos(half)),I0=phi/omega;
+  const Ec=I0/(d*d),rspot=d*Math.tan(half),Ee=I0*Math.pow(Math.cos(half),3)/(d*d);
+  let Er=Ec;if(r>0){const D=Math.sqrt(d*d+r*r),al=Math.atan(r/d);Er=I0*Math.cos(al)/(D*D);}
+  $('a2_phi').textContent=Math.round(phi);$('a2_I0').textContent=Math.round(I0);
+  $('a2_rspot').textContent=rspot.toFixed(2);$('a2_Ec').textContent=Math.round(Ec);
+  $('a2_Ee').textContent=Math.round(Ee);$('a2_Er').textContent=Math.round(Er);
+}
+watch(['a2_P','a2_eta','a2_beam','a2_H','a2_hw','a2_r'],calc2);
+
+/* ③ */
+function calc3(){
+  const L=+$('a3_L').value,W=+$('a3_W').value,H=+$('a3_H').value,hw=+$('a3_hw').value,
+        P=+$('a3_P').value,eta=+$('a3_eta').value,MF=+$('a3_mf').value,ref=+$('a3_ref').value,Et=+$('a3_Et').value;
+  const A=L*W,Hm=Math.max(0.1,H-hw),KR=(L*W)/(Hm*(L+W));
+  let UF=+$('a3_UF').value;if($('a3_autoUF').checked)UF=Math.min(0.92,Math.max(0.2,ufFromKR(KR)*ref));
+  const phi=P*eta,Nraw=Et*A/(phi*UF*MF),N=Math.max(1,Math.ceil(Nraw)),Ereal=N*phi*UF*MF/A;
+  $('a3_A').textContent=A.toFixed(1);$('a3_phi').textContent=Math.round(phi);
+  $('a3_UFv').textContent=UF.toFixed(2);$('a3_N').textContent=N;$('a3_Ereal').textContent=Math.round(Ereal);
+  $('a3_tip').textContent='按 '+N+' 盏 × '+P+'W（'+Math.round(phi)+' lm/盏）布置，实际达成约 '+Math.round(Ereal)+' lx，总功率约 '+(N*P).toFixed(0)+' W。建议均匀分布，筒灯间距 ≈ 安装高度×1.5 照度更均匀。';
+}
+watch(['a3_L','a3_W','a3_H','a3_hw','a3_P','a3_eta','a3_mf','a3_ref','a3_Et','a3_UF'],calc3);
+$('a3_autoUF').addEventListener('change',e=>{$('a3_UF').disabled=e.target.checked;calc3();});
+document.querySelectorAll('#p3 .preset button').forEach(b=>b.addEventListener('click',()=>{$('a3_Et').value=b.dataset.v;calc3();}));
+
+/* ④ */
+const STD=[['起居室·一般活动',100,'住宅'],['起居室·书写阅读',300,'住宅'],['卧室·一般活动',75,'住宅'],
+  ['卧室·床头阅读',150,'住宅'],['餐厅',150,'住宅'],['厨房·一般',100,'住宅'],['厨房·操作台',150,'住宅'],
+  ['卫生间',100,'住宅'],['走廊/楼梯',50,'住宅'],['办公室（普通）',300,'办公'],['办公室（设计绘图）',500,'办公'],
+  ['商店营业厅',300,'商业'],['教室',300,'教育'],['诊室',300,'医疗']];
+$('stdBody').innerHTML=STD.map(r=>`<tr><td>${r[0]}</td><td><b style="color:var(--navy)">${r[1]}</b></td><td><span class="tag">${r[2]}</span></td></tr>`).join('');
+
+/* ⑤ 布点图 */
+function calc5(){
+  const L=+$('a5_L').value,W=+$('a5_W').value,N=Math.max(1,Math.round(+$('a5_N').value)),H=+$('a5_H').value;
+  let cols=Math.max(1,Math.round(Math.sqrt(N*L/W)));
+  let rows=Math.ceil(N/cols);
+  const sx=L/cols, sy=W/rows;
+  const pts=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)pts.push({x:(c+0.5)*sx,y:(r+0.5)*sy});
+  const used=pts.slice(0,N);
+  $('a5_sx').innerHTML=sx.toFixed(2)+'<small> m</small>';
+  $('a5_sy').innerHTML=sy.toFixed(2)+'<small> m</small>';
+  $('a5_grid').textContent=cols+' × '+rows+(cols*rows>N?'（'+N+' 用）':'');
+  const ideal=H;
+  let tip=`建议间距 ≈ 安装高度 × 1.0~1.5（即 ${ideal.toFixed(1)}~${(ideal*1.5).toFixed(1)} m）。`;
+  if(Math.max(sx,sy)>ideal*1.8) tip+=' 当前间距偏大，可能明暗不均，建议增加灯数或减小间距。';
+  else if(Math.min(sx,sy)<ideal*0.6) tip+=' 当前间距偏小，可适当减灯节能。';
+  $('a5_tip').textContent=tip;
+  drawRoom(L,W,used);
+}
+function drawRoom(L,W,pts){
+  const sx_vb=400,sy_vb=320,pad=24;
+  const scale=Math.min((sx_vb-2*pad)/L,(sy_vb-2*pad)/W);
+  const w=L*scale,h=W*scale,ox=(sx_vb-w)/2,oy=(sy_vb-h)/2;
+  const px=x=>ox+x*scale, py=y=>oy+y*scale;
+  let s=`<rect x="${ox}" y="${oy}" width="${w}" height="${h}" rx="8" fill="#fbfcfe" stroke="#16243f" stroke-width="2"/>`;
+  pts.forEach(p=>{s+=`<circle cx="${px(p.x)}" cy="${py(p.y)}" r="6.5" fill="#ff7a18"/><circle cx="${px(p.x)}" cy="${py(p.y)}" r="11" fill="none" stroke="#ff9d4d" stroke-width="1.2" stroke-dasharray="3 3"/>`;});
+  if(pts.length>1){
+    const p0=pts[0],p1=pts.find(p=>Math.abs(p.y-p0.y)<1e-6&&p.x>p0.x)||pts[1];
+    const x0=px(p0.x),x1=px(p1.x);
+    s+=`<line x1="${x0}" y1="${oy+h+4}" x2="${x1}" y2="${oy+h+4}" stroke="#697584" stroke-width="1"/><line x1="${x0}" y1="${oy+h}" x2="${x0}" y2="${oy+h+8}" stroke="#697584" stroke-width="1"/><line x1="${x1}" y1="${oy+h}" x2="${x1}" y2="${oy+h+8}" stroke="#697584" stroke-width="1"/>`;
+  }
+  s+=`<text x="${ox}" y="${oy-8}" fill="#697584" font-size="11">俯视图 · 共 ${pts.length} 盏</text>`;
+  $('a5_svg').innerHTML=s;
+}
+watch(['a5_L','a5_W','a5_N','a5_H'],calc5);
+function syncFrom3(){$('a5_L').value=$('a3_L').value;$('a5_W').value=$('a3_W').value;$('a5_N').value=$('a3_N').textContent;calc5();}
+
+/* ⑥ 调光场景 */
+const SCENES=[
+  {n:'全亮 / 日常清洁',e:'☀️',t:350},
+  {n:'会客聊天',e:'💬',t:150},
+  {n:'用餐',e:'🍽️',t:180},
+  {n:'阅读办公',e:'📖',t:300},
+  {n:'观影',e:'🎬',t:30},
+  {n:'氛围模式',e:'🌙',t:60},
+  {n:'起夜',e:'🌑',t:20},
+];
+function calc6(){
+  const Efull=Math.max(1,+$('a6_Efull').value);
+  $('a6_grid').innerHTML=SCENES.map(s=>{
+    const dim=Math.min(100,s.t/Efull*100);
+    const actual=Efull*dim/100;
+    const lack=s.t>Efull;
+    return `<div class="scene"><div class="em">${s.e}</div><div class="nm">${s.n}</div>
+      <div class="lx">目标 <b>${s.t}</b> lx</div>
+      <div class="dim-bar"><i style="width:${dim}%"></i></div>
+      <div class="dim">调光至 <b style="color:var(--navy)">${dim.toFixed(0)}%</b> · 实际 ${Math.round(actual)} lx</div>
+      ${lack?'<div class="warn2">⚠ 满功率仅 '+Math.round(Efull)+' lx，达不到目标，需加灯</div>':''}
+    </div>`;
+  }).join('');
+}
+watch(['a6_Efull'],calc6);
+function pullFrom1(){$('a6_Efull').value=$('a1_E').textContent||300;calc6();}
+
+/* ⑦ 主灯选型 */
+// 主灯类型定义：k=「单盏合理覆盖面积 / 直径²」配光系数，drop=吊装高度区间，tiers=常见商品功率档位
+// 校核：客厅吸顶灯 Ø600≈16㎡ → k≈44；Ø800≈25㎡ → k≈39，故取 40
+//       餐厅吊灯 Ø600≈10㎡ → k≈28；Ø800≈17㎡ → k≈27，故取 26（吊灯罩更聚光，覆盖略小）
+const M_TYPES={
+  chandelier:{n:'餐厅吊灯',   k:26, ufBase:0.52, drop:[700,850],  tiers:[24,36,48,60,72],  minD:0.35},
+  ceiling:  {n:'客厅吸顶灯', k:40, ufBase:0.55, drop:null,       tiers:[36,48,60,72,96],  minD:0.45},
+  pendant:  {n:'客厅/卧室吊灯',k:45,ufBase:0.50, drop:[600,750],  tiers:[24,36,48,60],    minD:0.40},
+  downlight:{n:'主灯+筒灯组合',k:50,ufBase:0.48, drop:null,       tiers:[30,36,48,60],    minD:0.50},
+};
+let mType='ceiling';
+document.querySelectorAll('#a7_type button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#a7_type button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');mType=b.dataset.v;calc7();
+}));
+document.querySelectorAll('#a7_pres button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#a7_pres button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');$('a7_Et').value=b.dataset.v;calc7();
+}));
+// 常见商品规格表（静态内容，只渲染一次）
+const M_TABLE=[
+  ['Ø300','24W','1600lm','4–5㎡','卫生间/衣帽间/过道'],
+  ['Ø350','24–36W','2000–2900lm','5–7㎡','小卧室/储物间'],
+  ['Ø400','36W','2900lm','7–9㎡','次卧/书房/小餐厅'],
+  ['Ø450','36–48W','3200–4000lm','9–11㎡','卧室/次客厅'],
+  ['Ø500','48W','4300lm','11–14㎡','主卧/标准客厅'],
+  ['Ø600','48–60W','4300–5400lm','13–18㎡','客厅/主卧/餐厅4–6人'],
+  ['Ø700','60–72W','5400–6500lm','17–22㎡','中客厅/大餐厅'],
+  ['Ø800','96–120W','8600–10800lm','22–28㎡','大客厅/餐厅6–8人'],
+  ['Ø900','120W','10800lm','27–33㎡','大客厅/复式客厅'],
+  ['Ø1000–1200','150W+','13000lm+','33㎡+','挑空客厅/别墅/大平'],
+];
+$('a7_table').innerHTML='<thead><tr><th>灯罩直径</th><th>常见功率</th><th>参考光通量</th><th>适配面积</th><th>典型空间</th></tr></thead><tbody>'
+ +M_TABLE.map(r=>'<tr><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td></tr>').join('')+'</tbody>';
+
+// 标准商品直径系列（mm），供吸附与提示
+const M_DSER=[300,350,400,450,500,600,700,800,900,1000,1200];
+function snapD(mm){
+  let best=M_DSER[0];
+  for(const d of M_DSER){ if(Math.abs(d-mm)<Math.abs(best-mm)) best=d; }
+  return best;
+}
+
+function calc7(){
+  const L=+$('a7_L').value, W=+$('a7_W').value, H=+$('a7_H').value, hw=+$('a7_hw').value;
+  const A=L*W, T=M_TYPES[mType];
+  const N=Math.max(1,Math.round(+$('a7_N').value)), eta=+$('a7_eta').value,
+        MF=+$('a7_mf').value, ref=+$('a7_ref').value, Et=+$('a7_Et').value;
+
+  // 利用系数：主灯为大范围漫射配光，利用系数高于筒灯；以各类型基准乘室形/反射修正
+  const Hm=Math.max(0.1,H-hw), KR=(L*W)/(Hm*(L+W));
+  const krAdj=Math.min(1.18,Math.max(0.86,ufFromKR(KR)/0.48));
+  const UF=Math.min(0.85,Math.max(0.30,T.ufBase*krAdj*ref));
+
+  // ---- 功率反算 ----
+  const needLm=Et*A/UF/MF;              // 所需总光通量
+  const phiNeed=needLm/N;                // 每盏需要的光通量
+  const Wneed=phiNeed/eta;               // 每盏所需功率
+  // 落到最近的可购档位（向上取，不选低于需求的）
+  const tier=T.tiers.reduce((p,c)=>Math.abs(c-Wneed)<Math.abs(p-Wneed)?c:p,T.tiers[0]);
+  const Wreal=Math.max(Wneed>tier*1.08?tier:Math.min(tier,Wneed*1.12),1);
+  const phiReal=Wreal*eta;
+  const Ereal=N*phiReal*UF*MF/A;
+
+  $('a7_A').textContent=A.toFixed(1);
+  $('a7_need').textContent=Math.round(needLm).toLocaleString();
+  $('a7_UF').textContent=UF.toFixed(2);
+  $('a7_phi').innerHTML=Math.round(phiReal).toLocaleString()+'<small> lm/盏</small>';
+  $('a7_tier').textContent=tier+'W';
+  $('a7_perm').innerHTML=Math.round(N*phiReal/A)+'<small> lm/㎡</small>';
+  $('a7_cost').innerHTML=Math.max(1,Math.round(Wreal/2)) +'<small> 元(估)</small>';
+  $('a7_Wrec').textContent=Math.round(Wreal);
+  $('a7_Ereal').textContent=Math.round(Ereal);
+  $('a7_Wtot').textContent=Math.round(Wreal*N);
+
+  // 达标判定
+  const vd=$('a7_vd'), ratio=Ereal/Et;
+  $('a7_bar').style.width=Math.min(100,ratio*100)+'%';
+  if(ratio>=0.9&&ratio<=1.3){vd.className='verdict ok';vd.textContent='✓ 合适：'+Wreal+'W×'+N+'盏 达成 '+Math.round(Ereal)+' lx，贴合目标 '+Et+' lx';}
+  else if(ratio<0.9){vd.className='verdict low';vd.textContent='✕ 偏暗：仅达目标的 '+(ratio*100).toFixed(0)+'%，建议加灯或换更高光效光源';}
+  else{vd.className='verdict warn';vd.textContent='⚠ 偏亮：达目标的 '+(ratio*100).toFixed(0)+'%，可加调光降亮度或减小功率';}
+
+  // ---- 尺寸规则 ----
+  // 配光反算法：D = √(A / (N × k))，k 为该类灯具的「覆盖面积/直径²」系数
+  let D=Math.sqrt(A/(N*T.k));
+  D=Math.max(T.minD,Math.min(1.2,D));
+  const Dcalc=Math.round(D*1000);           // 理论计算值
+  const Dmm=snapD(Dcalc);                   // 建议下单的标准档位
+  $('a7_D').innerHTML=Dmm+'<small> mm</small>';
+  $('a7_Dn').textContent='理论 '+Dcalc+'mm，按 D=√(面积÷'+N+'盏÷'+T.k+') 反算，再吸附到商品标准档位。可选 '+M_DSER.filter(d=>Math.abs(d-Dcalc)<=250).join('/')+'mm。';
+
+  // 方/长方形灯体：视觉面积与圆灯接近，边长 ≈ 直径/1.45，长宽比贴合房间比例
+  let aw=Math.max(0.3,D/1.45), al=aw*Math.max(0.55,Math.min(1.7,Math.min(L,W)/Math.max(L,W)));
+  if(al<aw)al=aw;
+  const Rmm=Math.round(al*1000/10)*10, Wmm=Math.round(aw*1000/10)*10;
+  $('a7_R').innerHTML=Rmm+' × '+Wmm+'<small> mm</small>';
+  $('a7_Rn').textContent='长×宽。与圆灯等效配光面积，但同功率下均匀度略低；长边别超过房间短边 '+Math.round(Math.min(L,W)*1000*0.8)+'mm，否则会显得压抑。';
+
+  // 吊装高度（drop 为 null 表示贴顶/吸顶，无悬吊高度）
+  if(T.drop){
+    $('a7_drop').innerHTML=T.drop[0]+'–'+T.drop[1]+'<small> mm</small>';
+  }else{
+    $('a7_drop').innerHTML='贴顶安装<small> 无悬吊</small>';
+  }
+  const hangBottom=Math.max(2.05,Math.min(H-0.55,(T.drop?hw+T.drop[0]/1000:H-0.15)));
+  $('a7_h').innerHTML=Math.round(hangBottom*1000)+'<small> mm</small>';
+
+  // 单盏合理覆盖上限 = Ø800 面积 × k，超出宜分多盏
+  const maxCover=0.8*0.8*T.k;
+  const Nrec=Math.max(1,Math.ceil(A/maxCover));
+  $('a7_Nrec').innerHTML=Nrec+(Nrec!==N?' <small style="color:var(--low)">当前 '+N+'</small>':'')+'<small> 盏</small>';
+  // 配套筒灯：按每 6 ㎡ 一盏，扣除主灯已覆盖部分
+  const downN=Math.max(0,Math.round(A/6)-N);
+  $('a7_down').innerHTML=(downN>0?downN:'0')+'<small> 盏</small>';
+
+  const typeName=T.n;
+  const dropTxt=T.drop?(T.drop[0]+'~'+T.drop[1]):'—';
+  let rule='【'+typeName+'】';
+  if(mType==='chandelier'){
+    rule+='餐厅吊灯直径通常取餐桌长边 + 30~50cm，或按上式反算后与餐桌宽度比对——灯罩比餐桌小会显得局促。灯底离桌面 '+dropTxt+'mm，人眼不直视灯泡为原则。';
+  }else if(mType==='ceiling'){
+    rule+='客厅吸顶灯以「不遮挡动线」为先，直径超过房间短边 60% 会显压迫。灯体与顶面留 15~20mm 安装缝，四角均匀分布。';
+  }else if(mType==='pendant'){
+    rule+='吊灯离地净高不低于 2.05m（走动不碰头），灯底离桌面/床面 '+dropTxt+'mm。面积大于 20㎡ 建议单灯改双灯或加筒灯补光。';
+  }else{
+    rule+='「主灯 + 筒灯」组合：主灯负责氛围与基础照明，筒灯负责任务照度。筒灯按每 6㎡ 1 盏布点，间距 ≈ 安装高度 ×1.2，色温统一 3000K 或 4000K。';
+  }
+  rule+=' 主灯单独使用时，平均照度均匀度（U0）通常只有 0.4~0.5，房间四角偏暗；若客户要求"亮堂均匀"，务必配筒灯补光，不要只靠加大主灯功率。';
+  $('a7_rule').textContent=rule;
+
+  // 提示框
+  let msg='';
+  if(N>Nrec) msg+='<div class="warnbox">⚠ 主灯数量偏多（'+N+' 盏）。'+Nrec+' 盏已能覆盖当前面积，多装会导致单灯功率选得过小、光效下降且视觉杂乱，建议减到 '+Nrec+' 盏并相应提高单灯功率。</div>';
+  const shortSide=Math.min(L,W);   // 真正的短边（长宽顺序可能是任意的）
+  if(Dmm>shortSide*1000*0.62) msg+='<div class="warnbox">⚠ 推荐直径 '+Dmm+'mm 已超过房间短边（'+Math.round(shortSide*1000)+'mm）的 62%，视觉上会显空间压抑。建议改用 '+Nrec+' 盏小灯或矩形长灯。</div>';
+  if(mType==='chandelier'&&A>28) msg+='<div class="warnbox">⚗ 餐厅面积超 28㎡，单盏吊灯照度会明显不足，建议大吊灯或多头吊灯 + 餐边筒灯。</div>';
+  if(ratio<0.9){
+    const lackLm=Math.round((Et-Ereal)*A/UF/MF), lackW=Math.round(lackLm/90);
+    msg+='<div class="warnbox">⚠ 当前配置偏暗，缺口约 '+Math.round(Et-Ereal)+' lx。<b>主灯受安装高度限制、向下配光为主，不建议靠加大主灯功率补光</b>——正确做法是加筒灯补：约需再补 '+lackLm.toLocaleString()+' lm（约 '+lackW+'W 筒灯 / '+Math.ceil(lackW/9)+' 盏 9W 筒灯），与主灯统一色温后并入同一回路场景。</div>';
+  }else{
+    msg+='<div class="okbox">✓ 配置合理：'+N+' 盏 '+Math.round(Wreal)+'W '+typeName+'，'+Math.round(Wreal*N)+'W 总功率，达成 '+Math.round(Ereal)+' lx（达目标的 '+(ratio*100).toFixed(0)+'%）。尺寸建议 Ø'+Dmm+'mm（或 '+Rmm+'×'+Wmm+'mm 方/长方）。</div>';
+  }
+  $('a7_msg').innerHTML=msg;
+
+  draw7(A,L,W,Dmm/1000,hangBottom,hw,H,typeName);
+}
+watch(['a7_L','a7_W','a7_H','a7_hw','a7_N','a7_eta','a7_mf','a7_ref','a7_Et'],calc7);
+function syncFrom1(){
+  $('a7_L').value=$('a1_L').value;$('a7_W').value=$('a1_W').value;
+  $('a7_H').value=(+$('a1_H').value+0.2).toFixed(2);$('a7_hw').value=$('a1_hw').value;
+  calc7();
+}
+
+function draw7(A,L,W,D,hangBottom,hw,H,typeName){
+  // --- 俯视图 ---
+  const pad=28,vw=400,vh=300;
+  const sc=Math.min((vw-2*pad)/L,(vh-2*pad)/W);
+  const rw=L*sc,rh=W*sc,ox=(vw-rw)/2,oy=(vh-rh)/2;
+  const cx=ox+rw/2,cy=oy+rh/2,dr=D*sc;
+  let s='<rect x="'+ox+'" y="'+oy+'" width="'+rw+'" height="'+rh+'" rx="8" fill="#fff" stroke="#16243f" stroke-width="2"/>';
+  // 灯罩
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+dr+'" fill="#ff7a18" fill-opacity=".16" stroke="#ff7a18" stroke-width="2.5"/>';
+  s+='<line x1="'+(cx-dr)+'" y1="'+cy+'" x2="'+(cx+dr)+'" y2="'+cy+'" stroke="#ff9d4d" stroke-width="1" stroke-dasharray="4 3"/>';
+  s+='<line x1="'+cx+'" y1="'+(cy-dr)+'" x2="'+cx+'" y2="'+(cy+dr)+'" stroke="#ff9d4d" stroke-width="1" stroke-dasharray="4 3"/>';
+  s+='<text x="'+cx+'" y="'+(cy-4)+'" text-anchor="middle" fill="#b8520a" font-size="11" font-weight="700">Ø'+Math.round(D*1000)+'</text>';
+  s+='<text x="'+cx+'" y="'+(cy+9)+'" text-anchor="middle" fill="#b8520a" font-size="9">mm</text>';
+  s+='<text x="'+ox+'" y="'+(oy-9)+'" fill="#697584" font-size="11">俯视 · '+typeName+' · 房间 '+L+'×'+W+'m（'+A.toFixed(1)+'㎡）</text>';
+  // 短边比例提示（经验：主灯直径占房间短边 12%~35% 为视觉舒适区）
+  const ratio=D/Math.min(L,W);   // 灯罩直径占「短边」的比例
+  let vt,vc;
+  if(ratio>0.62){vt='（偏大，空间会显压抑，建议改小或分多盏）';vc='#a53c3c';}
+  else if(ratio>0.38){vt='（偏大，勉强可接受）';vc='#a53c3c';}
+  else if(ratio<0.10){vt='（偏小，主灯撑不起空间，建议放大档位）';vc='#a53c3c';}
+  else if(ratio<0.16){vt='（略小，视觉偏精巧）';vc='#697584';}
+  else{vt='（视觉舒服，推荐区间）';vc='#1d6b46';}
+  s+='<text x="'+ox+'" y="'+(oy+rh+18)+'" fill="'+vc+'" font-size="10.5">灯罩占房间短边 '+Math.round(ratio*100)+'%'+vt+'</text>';
+  $('a7_svgTop').innerHTML=s;
+
+  // --- 剖面图 ---
+  const W2=400,H2=300,ml=46,mb=34,top=26;
+  const wRoom=250,x0=ml,roomH=H2-top-mb;
+  const ceilY=top,floorY=top+roomH;
+  const py=floorY-(hw/2.8)*roomH;            // 工作面（按比例）
+  const pyLamp=floorY-(hangBottom/2.8)*roomH;// 灯底
+  let t='';
+  t+='<line x1="'+x0+'" y1="'+ceilY+'" x2="'+(x0+wRoom)+'" y2="'+ceilY+'" stroke="#16243f" stroke-width="3"/>';
+  t+='<line x1="'+x0+'" y1="'+floorY+'" x2="'+(x0+wRoom)+'" y2="'+floorY+'" stroke="#16243f" stroke-width="3"/>';
+  t+='<rect x="'+(x0+105)+'" y="'+ceilY+'" width="42" height="14" rx="3" fill="#ff7a18" fill-opacity=".2" stroke="#ff7a18" stroke-width="2"/>';
+  t+='<text x="'+(x0+126)+'" y="'+(ceilY+32)+'" text-anchor="middle" fill="#b8520a" font-size="10" font-weight="700">主灯</text>';
+  // 工作面 / 桌面
+  t+='<rect x="'+(x0+60)+'" y="'+py+'" width="150" height="6" rx="2" fill="#c9d2df"/>';
+  t+='<text x="'+(x0+215)+'" y="'+(py+4)+'" fill="#697584" font-size="9.5">工作面 '+Math.round(hw*1000)+'mm</text>';
+  // 尺寸线：层高
+  t+='<line x1="'+(x0-14)+'" y1="'+ceilY+'" x2="'+(x0-14)+'" y2="'+floorY+'" stroke="#8a94a6" stroke-width="1"/>';
+  t+='<line x1="'+(x0-19)+'" y1="'+ceilY+'" x2="'+(x0-9)+'" y2="'+ceilY+'" stroke="#8a94a6" stroke-width="1"/>';
+  t+='<line x1="'+(x0-19)+'" y1="'+floorY+'" x2="'+(x0-9)+'" y2="'+floorY+'" stroke="#8a94a6" stroke-width="1"/>';
+  t+='<text x="'+(x0-20)+'" y="'+((ceilY+floorY)/2)+'" text-anchor="end" fill="#697584" font-size="10">'+H.toFixed(2)+'m 层高</text>';
+  // 尺寸线：灯底离地
+  t+='<line x1="'+(x0+wRoom+16)+'" y1="'+pyLamp+'" x2="'+(x0+wRoom+16)+'" y2="'+floorY+'" stroke="#ff7a18" stroke-width="1.2"/>';
+  t+='<line x1="'+(x0+wRoom+11)+'" y1="'+pyLamp+'" x2="'+(x0+wRoom+21)+'" y2="'+pyLamp+'" stroke="#ff7a18" stroke-width="1.2"/>';
+  t+='<line x1="'+(x0+wRoom+11)+'" y1="'+floorY+'" x2="'+(x0+wRoom+21)+'" y2="'+floorY+'" stroke="#ff7a18" stroke-width="1.2"/>';
+  t+='<text x="'+(x0+wRoom+24)+'" y="'+((pyLamp+floorY)/2)+'" fill="#b8520a" font-size="10.5" font-weight="700">'+Math.round(hangBottom*1000)+'</text>';
+  t+='<text x="'+(x0+wRoom+24)+'" y="'+((pyLamp+floorY)/2+11)+'" fill="#b8520a" font-size="9">mm 灯底离地</text>';
+  // 尺寸线：灯底到工作面
+  if(py>pyLamp+4){
+    t+='<line x1="'+(x0+wRoom+16)+'" y1="'+pyLamp+'" x2="'+(x0+wRoom+16)+'" y2="'+py+'" stroke="#2b467d" stroke-width="1.2"/>';
+    t+='<line x1="'+(x0+wRoom+11)+'" y1="'+py+'" x2="'+(x0+wRoom+21)+'" y2="'+py+'" stroke="#2b467d" stroke-width="1.2"/>';
+    t+='<text x="'+(x0+wRoom+24)+'" y="'+((pyLamp+py)/2+3)+'" fill="#16243f" font-size="9.5">'+Math.round((py-pyLamp)/roomH*2800)+'mm</text>';
+    t+='<text x="'+(x0+wRoom+24)+'" y="'+((pyLamp+py)/2+14)+'" fill="#16243f" font-size="8.5">灯底→工作面</text>';
+  }
+  // 箭头示意照度
+  const arrows=[[-38],[0],[38]];
+  arrows.forEach(a=>{
+    const ax=x0+126+a[0];
+    t+='<line x1="'+ax+'" y1="'+(pyLamp+6)+'" x2="'+ax+'" y2="'+(py-8)+'" stroke="#ff7a18" stroke-width="1.6" stroke-dasharray="5 4"/>';
+    t+='<path d="M'+(ax-4)+' '+(py-10)+' L'+ax+' '+(py-2)+' L'+(ax+4)+' '+(py-10)+'" fill="none" stroke="#ff7a18" stroke-width="1.6"/>';
+  });
+  t+='<text x="'+x0+'" y="'+(floorY+20)+'" fill="#697584" font-size="10.5">剖面 · 吊装高度按人体尺度校验（离地 ≥2050mm 为宜）</text>';
+  $('a7_svgSec').innerHTML=t;
+}
+
+/* ⑧ 三层混光测算 */
+/* ── ⑧ 三层混光：按房间类型组织 ──
+   每个房间自带：默认目标照度、预设档、典型场景（分摊比例）、主灯形式与配光系数 */
+const ROOMS8={
+  living:{
+    name:'客厅', defEt:150, preset:[[100,'会客'],[150,'阅读'],[200,'书写']],
+    mainType:'吸顶灯 / 吊灯', mainK:40,
+    mainNote:'客厅靠均布拉高四角亮度。主灯装高后向下配光，加功率并不能改善暗角——要更亮请加筒灯。',
+    scenes:{
+      living:{n:'纯会客',   f:[0.40,0.40,0.20],
+        why:'无阅读需求，主灯承担更多基础照度，靠均布拉高四角亮度；筒灯用于装饰画、摆件等点缀。'},
+      reading:{n:'有阅读区', f:[0.25,0.55,0.20],
+        why:'沙发区/茶几需看书报，筒灯必须承担主要任务照度，否则主灯再亮也解决不了桌面照度不足。'},
+      display:{n:'有展柜/装饰',f:[0.20,0.60,0.20],
+        why:'展示柜与装饰画需重点打光，射灯/筒灯承担最大比例；同时务必避开柜体背光造成眩光与反光。'},
+      nomain: {n:'无主灯设计',f:[0.00,1.00,0.00],
+        why:'全部照度由筒灯+射灯完成，间距必须收紧到 0.8~1.0 倍净高，且需分层调光（基础照明+重点照明分开回路）。'},
+    }
+  },
+  dining:{
+    name:'餐厅', defEt:200, preset:[[150,'用餐'],[200,'餐桌作业'],[300,'精致餐具']],
+    mainType:'餐吊灯', mainK:26,
+    mainNote:'餐吊灯下缘离桌面 700~850mm：低了压头看不清菜，高了桌面照度不足。灯罩直径宜略小于餐桌短边，或与之齐平。',
+    scenes:{
+      simple:{n:'仅餐吊灯',     f:[0.85,0.15,0.00],
+        why:'小餐厅（≤12㎡）只靠餐吊灯即可。桌面照度按 200lx 取，吊灯开口角度要大（>100°）才照得满桌面。'},
+      normal:{n:'吊灯+餐边筒灯', f:[0.55,0.45,0.00],
+        why:'标准做法：吊灯管餐桌，餐边筒灯/射灯补餐边柜与装饰。餐桌正下方不要再叠筒灯，否则桌面过曝、四周仍暗。'},
+      plus:  {n:'加餐边灯带',   f:[0.45,0.35,0.20],
+        why:'需要柜内重点照明时，柜内灯带比顶面筒灯更隐蔽、不在视线里产生光斑；柜内照度 300~500lx 即可。'},
+    }
+  },
+  bedroom:{
+    name:'卧室', defEt:100, preset:[[75,'一般活动'],[150,'床头阅读'],[300,'书写办公']],
+    mainType:'吸顶灯', mainK:34,
+    mainNote:'卧室三件事必须分开做：顶面基础照明、床头阅读、衣柜感应。三者色温统一，只分开控制。',
+    scenes:{
+      basic:{n:'仅基础照明', f:[0.82,0.14,0.04],
+        why:'只做顶面照明。衣柜深、不打灯内部全黑，取衣看不清——这是卧室最常见的照明遗漏。'},
+      read: {n:'床头阅读',   f:[0.52,0.43,0.05],
+        why:'床头双控 + 壁灯/阅读射灯。床头阅读按 150lx（躺姿读书），光束角宜小（24~36°），只照书页不照眼。'},
+      full: {n:'全屋三区',   f:[0.45,0.40,0.15],
+        why:'吸顶灯做基础 + 床头射灯做阅读 + 衣柜感应灯带。衣柜感应灯带是成本最低、观感提升最大的一笔投入。'},
+    }
+  },
+};
+const UF8={main:0.55, down:0.45, strip:0.30};
+const DOWN_OPTS=[{p:5,l:350},{p:7,l:560},{p:9,l:810},{p:12,l:1080},{p:15,l:1350}];
+let room8='living', sc8='reading';
+document.querySelectorAll('#a8_room > div').forEach(d=>d.addEventListener('click',()=>{
+  document.querySelectorAll('#a8_room > div').forEach(x=>x.classList.remove('on'));
+  d.classList.add('on');room8=d.dataset.v;applyRoom();
+}));
+function applyRoom(){
+  const R=ROOMS8[room8];
+  $('a8_scene').innerHTML=Object.keys(R.scenes).map((k,i)=>
+    '<div data-v="'+k+'"'+(i===0?' class="on"':'')+'>'+R.scenes[k].n+'</div>').join('');
+  document.querySelectorAll('#a8_scene > div').forEach(d=>d.addEventListener('click',()=>{
+    document.querySelectorAll('#a8_scene > div').forEach(x=>x.classList.remove('on'));
+    d.classList.add('on');sc8=d.dataset.v;calc8();
+  }));
+  sc8=Object.keys(R.scenes)[0];
+  $('a8_pres').innerHTML=R.preset.map(p=>
+    '<button class="preset'+(p[0]===R.defEt?' on':'')+'" data-v="'+p[0]+'">'+p[0]+' '+p[1]+'</button>').join('');
+  document.querySelectorAll('#a8_pres button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#a8_pres button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');$('a8_Et').value=b.dataset.v;calc8();
+  }));
+  $('a8_Et').value=R.defEt;
+  // 工作面高度随房间变：餐厅=餐桌面、卧室=床头、客厅=茶几/沙发面
+  $('a8_hw').value=(room8==='bedroom'?'0.6':room8==='dining'?'0.75':'0.75');
+  $('a8_hwLabel').innerHTML=(room8==='bedroom'?'床头/坐面高':room8==='dining'?'餐桌面高':'工作面高')+' <span class="unit">m</span>';
+  $('a8_mainNote').textContent='【'+R.name+' · '+R.mainType+'】'+R.mainNote;
+  $('a8_cond_field').style.display=(room8==='dining')?'none':'';
+  calc8();
+}
+
+function calc8(){
+  const L=+$('a8_L').value, W=+$('a8_W').value, H=+$('a8_H').value, hw=+$('a8_hw').value;
+  const A=L*W, MF=+$('a8_mf').value, Et=+$('a8_Et').value;
+  const R=ROOMS8[room8], S=R.scenes[sc8], f=S.f;
+  const hasMain=f[0]>0;
+
+  // 利用系数：各层按自身配光折算。
+  //   主灯漫射均匀 0.55｜筒射灯重点 0.45｜灯带洗墙 0.30
+  // 整体利用系数 = 按分摊比例加权 × 均布折损（有主灯 0.95 / 无主灯 0.88）。
+  // 正算与回代共用同一组 uf1/uf2/uf3 与折损系数，保证不自洽、不虚高。
+  const uf1=hasMain?0.55:0, uf2=0.45, uf3=f[2]>0?0.30:0;
+  const raw=(uf1*f[0]+uf2*f[1]+uf3*f[2]);
+  const dispatch=hasMain?0.95:0.88;
+  const UF=Math.min(0.62,Math.max(0.28,raw*dispatch));
+  const need=Et*A/UF/MF;
+  $('a8_A').innerHTML=A.toFixed(1)+'<small> ㎡</small>';
+  $('a8_need').innerHTML=Math.round(need).toLocaleString()+'<small> lm</small>';
+  $('a8_UF').textContent=UF.toFixed(2);
+
+  // 分摊
+  const p=[need*f[0],need*f[1],need*f[2]];
+  $('a8_ratio').innerHTML =
+    (f[0]>0?'<div style="width:'+(f[0]*100)+'%;background:#378ADD">主灯 '+(f[0]*100)+'%</div>':'')+
+    '<div style="width:'+(f[1]*100)+'%;background:#1D9E75">筒射灯 '+(f[1]*100)+'%</div>'+
+    (f[2]>0?'<div style="width:'+(f[2]*100)+'%;background:#D4537E">灯带 '+(f[2]*100)+'%</div>':'');
+  $('a8_why').textContent='【'+R.name+' · '+S.n+'】'+S.why;
+  $('a8_mainLabel').textContent=R.mainType+' · 基础层';
+  $('a8_downLabel').textContent=(room8==='bedroom'?'床头射灯/筒灯':room8==='dining'?'餐边筒灯/射灯':'筒射灯')+' · 重点层';
+
+  // ---- 主灯层 ----
+  let mainW=0, mainTier=0, Dm=0;
+  if(hasMain){
+    const D=Math.max(0.35,Math.min(1.2,Math.sqrt(A/R.mainK)));
+    Dm=snapD(Math.round(D*1000));
+    const Wneed=p[0]/90;
+    const tiers=[24,36,48,60,72,96];
+    const tier=tiers.reduce((b,c)=>Math.abs(c-Wneed)<Math.abs(b-Wneed)?c:b,tiers[0]);
+    const Wreal=Math.max(Wneed>tier*1.08?tier:Math.min(tier,Wneed*1.12),1);
+    mainW=Math.round(Wreal); mainTier=tier;
+    $('a8_p1').textContent=Math.round(p[0]).toLocaleString()+' lm';
+    $('a8_D').innerHTML='Ø'+Dm+'<small> mm</small>';
+    $('a8_W1').textContent=Wneed.toFixed(0)+' W';
+    $('a8_W1r').textContent=tier+' W'+(Wneed<tiers[0]?'（最小档）':'');
+  }else{
+    // 同上：清 innerHTML，避免无主灯方案残留上一次直径
+    ['a8_p1','a8_D','a8_W1','a8_W1r'].forEach(k=>{$(k).innerHTML='';$(k).textContent='—';});
+    $('a8_p1').textContent='—（本方案无主灯）';
+  }
+
+  // ---- 筒射灯层 ----
+  // 选规格：先看这层需要多少个（按 700lm 估算），再据此挑最接近的功率档，
+  // 避免"先选小瓦数→数量取整→总光通超额"或"选大瓦数→数量过少→明暗不均"
+  const guess=Math.max(1,Math.round(p[1]/700));
+  const wantPhi=p[1]/guess;
+  const opt=DOWN_OPTS.reduce((b,o)=>Math.abs(o.l-wantPhi)<Math.abs(b.l-wantPhi)?o:b,DOWN_OPTS[2]);
+  const Nneed=Math.max(1,Math.ceil(p[1]/opt.l));
+  // 间距上限校核：s = 净高 × 系数（无主灯收紧）
+  const kf=hasMain?1.2:1.0;
+  const sMax=H*kf;
+  const nSpacing=Math.max(1,Math.ceil((Math.max(L,W)-0.6)/sMax));
+  const N=Math.max(Nneed,nSpacing);
+  $('a8_p2').textContent=Math.round(p[1]).toLocaleString()+' lm';
+  $('a8_N2a').textContent=Nneed+' 个';
+  $('a8_N2b').textContent='≥'+nSpacing+' 个（间距≤'+sMax.toFixed(2)+'m）';
+  $('a8_N2').textContent=N+' 个 · '+opt.p+'W';
+
+  // ---- 灯带层 ----
+  // 关键：灯带是氛围层，照度贡献小（UF≈0.30），且商品最小档 10W/m 常远超需求，
+  // 必须按「需求」与「最小档」取小，否则会把总照度严重推高（实测可达 260%+）。
+  let Lstrip=0, band=0, overBand=0, wpmNeed=0;
+  if(f[2]>0){
+    // 灯带长度基准按房间性质区分：
+    //   客厅 = 吊顶周长 − 遮挡（回光灯槽）
+    //   餐厅 = 餐边柜展开长度（柜内灯带，≈ 墙长 × 0.9，扣柜体间断 0.6m）
+    //   卧室 = 衣柜内部周长（感应灯带，按衣柜展开长度 = 墙长 × 0.8，最少 1.5m）
+    let base;
+    if(room8==='living') base=Math.max(1,2*(L+W)-(+$('a8_cond').value));
+    else if(room8==='dining') base=Math.max(1.5,Math.max(L,W)*0.9-0.6);
+    else base=Math.max(1.5,Math.max(L,W)*0.8);
+    Lstrip=Math.round(base*10)/10;
+    const etaB=70, wpm=p[2]/Lstrip/etaB;
+    wpmNeed=wpm;
+    // 商品档：7 / 10 / 12 / 15 / 20 W/m；取不小于需求的最小档
+    const BANDS=[7,10,12,15,20];
+    band=BANDS.find(b=>b>=wpm)||BANDS[BANDS.length-1];
+    overBand=band/wpm;
+    const lenName=room8==='living'?'吊顶周长':room8==='dining'?'餐边柜展开':'衣柜内展开';
+    $('a8_p3').textContent=Math.round(p[2]).toLocaleString()+' lm';
+    $('a8_len').innerHTML=Lstrip.toFixed(1)+'<small> m</small>';
+    $('a8_wpm').textContent=wpm.toFixed(1)+' W/m';
+    $('a8_tier').textContent=band+' W/m'+(overBand>1.6?'（需求偏低）':'');
+    $('a8_lenNote').textContent='按'+lenName+'估算 · '+(room8==='living'?'已扣窗帘盒/柜体遮挡':room8==='dining'?'柜内灯带，走顶面不开槽':'柜内感应灯带，嵌入柜顶铝槽');
+  }else{
+    // 清空时必须同时清 innerHTML 与 textContent，否则会残留上一次的内容
+    ['a8_p3','a8_len','a8_wpm','a8_tier','a8_lenNote'].forEach(k=>{$(k).innerHTML='';$(k).textContent='—';});
+  }
+
+  // ---- 回代验证 ----
+  // 用「实际选定的规格与数量」回算，而非分摊的理论值——这才是真校验。
+  // 灯带若被商品档位抬高（overBand>1），按调光压到需求量参与计算——灯带本就该靠调光控亮度。
+  const stripDim=overBand>1?Math.min(1,1/overBand):1;   // 灯带有效调光比例
+  const phiDown=N*opt.l, phiMain=hasMain?mainW*90:0, phiStrip=f[2]>0?Lstrip*band*70*stripDim:0;
+  const Ereal=(phiMain*uf1+phiDown*uf2+phiStrip*uf3)*dispatch/A;
+  const rate=Ereal/Et;
+  $('a8_Ereal').innerHTML=Math.round(Ereal)+'<small> lx</small>';
+  $('a8_rate').textContent=Math.round(rate*100)+'%';
+  $('a8_ptot').innerHTML=Math.round(p[0]+p[1]+p[2]).toLocaleString()+'<small> lm</small>';
+  let Wtot=0;
+  if(hasMain) Wtot+=mainW;
+  Wtot+=N*opt.p;
+  if(f[2]>0) Wtot+=Math.round(Lstrip*band);
+  $('a8_Wtot').innerHTML=Math.round(Wtot)+'<small> W</small>';
+
+  // ---- 提示 ----
+  // 合格区间放宽到 80%~140%：筒灯必须取整（6→7）、主灯只能取商品档（17W→24W），
+  // 这类"向上取整"的叠加本身就带来 20~40% 余量，属正常，不该判为超标。
+  let msg='';
+  if(rate<0.8) msg+='<div class="warnbox">⚠ 回代照度 '+Math.round(Ereal)+' lx，仅达目标 '+(rate*100).toFixed(0)+'%，偏低。建议筒灯从 '+N+' 个加到 '+Math.ceil(N*1.25)+' 个，或换更高光效光源。</div>';
+  else if(rate>1.4) msg+='<div class="warnbox">⚠ 回代照度 '+Math.round(Ereal)+' lx，超出目标 '+(rate*100).toFixed(0)+'%，明显偏亮。优先做分区调光（主灯调至60~70%、灯带调至30~40%）而不是减灯——减灯会让暗角更暗。</div>';
+  else if(rate>1.2) msg+='<div class="okbox">✓ 回代 '+Math.round(Ereal)+' lx，达目标 '+(rate*100).toFixed(0)+'%。属正常工程余量（筒灯取整 + 主灯取商品档所致），建议把主灯调至 70~80% 亮度使用，日常更舒适。</div>';
+  else msg+='<div class="okbox">✓ 回代 '+Math.round(Ereal)+' lx，达目标 '+(rate*100).toFixed(0)+'%，配置合理。</div>';
+  if(!hasMain) msg+='<div class="warnbox">⚗ 无主灯方案务必做<strong>双回路分组</strong>：筒灯按「基础照明层」与「重点照明层」分开，位置交替排布，否则开一档过曝、全开过暗，没有中间过渡。</div>';
+  if(N>nSpacing && rate>=0.8) msg+='<div class="warnbox">· 注意：照度算出需 '+Nneed+' 个，但按间距上限只需 '+nSpacing+' 个。当前按 <strong>'+N+' 个</strong>布置（'+nSpacing+'排布 × 分组），属于舒适余量；若客户预算紧，可减到 '+nSpacing+' 个仍达标。</div>';
+  if(H<2.55) msg+='<div class="warnbox">· 净高不足 2.55m，灯带做暗藏会压层高，建议改明装或只在吊顶回光灯槽做；若坚持暗藏需先核对吊顶厚度。</div>';
+  if(room8==='dining'){
+    msg+='<div class="okbox">· <strong>餐厅三条硬规则</strong>：①吊灯下缘离桌面 700~850mm（低了压头看不清菜，高了桌面暗）；②灯罩直径约等于餐桌短边或略小——<strong>吊灯比餐桌小显局促，比餐桌大显压头</strong>；③餐桌正下方不要叠筒灯，桌面会过曝而四周仍暗，餐边照明交给餐边柜筒灯或柜内灯带。</div>';
+    if(Math.abs(Dm-(Math.min(L,W)*1000))>Math.min(L,W)*300) msg+='<div class="warnbox">· 建议直径 Ø'+Dm+'mm 与房间短边 '+Math.round(Math.min(L,W)*1000)+'mm 差异较大，核对一下餐桌实际尺寸：<strong>吊灯直径应围绕餐桌短边 ±20cm 取</strong>，若偏大考虑换多头吊灯或加大餐桌。</div>';
+    msg+='<div class="warnbox">· 餐厅灯光需<strong>独立回路 + 调光</strong>：用餐 30%、备餐 100%、待客 50% 三档写在面板场景里，客户最认这套。</div>';
+  }
+  if(room8==='bedroom'){
+    msg+='<div class="okbox">· <strong>卧室三区建议</strong>：顶面吸顶灯做基础（双控）；床头两侧设阅读射灯或壁灯，按 150lx、光束角 24~36° 只照书页不晃眼；衣柜内加感应灯带（开门即亮），柜内照度 300~500lx。</div>';
+    if(f[2]<=0) msg+='<div class="warnbox">· 当前方案未含灯带。若衣柜在主卧，<strong>强烈建议加柜内感应灯带</strong>——成本最低、业主感知最强的一笔投入，深色衣柜不打灯取衣全靠摸。</div>';
+    if(f[1]>0) msg+='<div class="warnbox">· 床头阅读灯务必做<strong>双控（床头双联开关）</strong>，否则躺下后无法关灯，这是卧室最常见的使用痛点。</div>';
+  }
+  if(overBand>1.5) msg+='<div class="warnbox">· 灯带按光通需求只需 '+wpmNeed.toFixed(1)+' W/m，但商品最小档是 '+band+' W/m（超出 '+(overBand).toFixed(1)+' 倍）。这是灯带的常态——<strong>务必接调光，开到 30~40% 亮度</strong>，既达到设计效果又不浪费电、不过曝。</div>';
+  $('a8_msg').innerHTML=msg;
+
+  let tip='筒灯沿长边排布 '+nSpacing+' 个已可满足间距（≤'+sMax.toFixed(2)+'m）。';
+  if(N>nSpacing) tip+='按重点照明需求增至 '+N+' 个，建议 '+nSpacing+' 个一排 + '+(N-nSpacing)+' 个补位（可拆成两组分别控制）。';
+  if(f[2]>0) tip+=' 灯带长度 '+Lstrip.toFixed(1)+'m（'+((room8==='dining')?'按餐边柜展开长度估算':'已扣窗帘盒/柜体遮挡')+'），色温与'+((room8==='dining')?'射灯':'筒灯')+'统一为 3000K 或 4000K。';
+  if(room8==='dining') tip+=' 餐吊灯下缘离桌面 700~850mm，灯罩直径宜贴合餐桌短边 ±20cm。';
+  if(room8==='bedroom') tip+=' 床头阅读建议光束角 24~36°，只照书页不照眼；衣柜感应灯带走柜内，顶面不额外加筒灯。';
+  $('a8_tip').textContent=tip;
+
+  draw8(L,W,H,A,N,nSpacing,hasMain,Dm,opt,f[2]>0,sc8);
+}
+watch(['a8_L','a8_W','a8_H','a8_hw','a8_Et','a8_mf','a8_cond'],calc8);
+function sync8From1(){
+  $('a8_L').value=$('a1_L').value;$('a8_W').value=$('a1_W').value;
+  $('a8_hw').value=$('a1_hw').value;$('a8_H').value=(+$('a1_H').value+0.2).toFixed(2);
+  calc8();
+}
+
+function draw8(L,W,H,A,N,nSpacing,hasMain,Dm,opt,hasStrip,scene){
+  const pad=34,vw=640,vh=340;
+  const sc=Math.min((vw-2*pad)/L,(vh-2*pad)/W);
+  const rw=L*sc,rh=W*sc,ox=(vw-rw)/2,oy=(vh-rh)/2;
+  const px=x=>ox+x*sc, py=y=>oy+y*sc;
+  let s='';
+  s+='<rect x="'+ox+'" y="'+oy+'" width="'+rw+'" height="'+rh+'" rx="8" fill="#fff" stroke="#16243f" stroke-width="2"/>';
+  // 灯带：沿吊顶四周内侧
+  if(hasStrip){
+    const off=6;
+    s+='<rect x="'+(ox+off)+'" y="'+(oy+off)+'" width="'+(rw-2*off)+'" height="'+(rh-2*off)+'" rx="4" fill="none" stroke="#D4537E" stroke-width="4" stroke-dasharray="12 6" opacity=".75"/>';
+  }
+  // 主灯
+  if(hasMain){
+    const cx=px(L/2), cy=py(W/2), r=Math.max(14,(Dm/1000)*sc);
+    s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#378ADD" fill-opacity=".18" stroke="#378ADD" stroke-width="2.5"/>';
+    s+='<text x="'+cx+'" y="'+(cy-3)+'" text-anchor="middle" fill="#0C447C" font-size="10.5" font-weight="700">主灯</text>';
+    s+='<text x="'+cx+'" y="'+(cy+10)+'" text-anchor="middle" fill="#0C447C" font-size="9">Ø'+Dm+'</text>';
+  }
+  // 筒灯：均布 + 补位
+  const nCol=Math.max(2,Math.round(Math.sqrt(N*L/W))), nRow=Math.ceil(N/nCol);
+  const sx=L/nCol, sy=W/nRow;
+  const used=Math.min(N,nCol*nRow);
+  for(let i=0;i<used;i++){
+    const c=i%nCol, r=Math.floor(i/nCol);
+    const x=px((c+0.5)*sx), y=py((r+0.5)*sy);
+    const extra=(N>nSpacing)?'':'';
+    s+='<circle cx="'+x+'" cy="'+y+'" r="9" fill="#1D9E75" fill-opacity=".2" stroke="#1D9E75" stroke-width="1.8"/>';
+    s+='<circle cx="'+x+'" cy="'+y+'" r="2.5" fill="#1D9E75"/>';
+    // 照射方向箭头
+    s+='<line x1="'+x+'" y1="'+(y+11)+'" x2="'+x+'" y2="'+(y+19)+'" stroke="#1D9E75" stroke-width="1.2" stroke-dasharray="2 2"/>';
+  }
+  if(nCol*nRow>N){
+    // 空位标注
+    for(let i=N;i<nCol*nRow;i++){
+      const c=i%nCol, r=Math.floor(i/nCol);
+      const x=px((c+0.5)*sx), y=py((r+0.5)*sy);
+      s+='<circle cx="'+x+'" cy="'+y+'" r="8" fill="none" stroke="#B4B2A9" stroke-width="1" stroke-dasharray="2 2"/>';
+    }
+  }
+  // 尺寸标注：长边第一个间距
+  if(nCol>1){
+    const x0=px(sx/2), x1=px(sx*1.5);
+    s+='<line x1="'+x0+'" y1="'+(oy+rh+12)+'" x2="'+x1+'" y2="'+(oy+rh+12)+'" stroke="#697584" stroke-width="1"/>';
+    s+='<line x1="'+x0+'" y1="'+(oy+rh+8)+'" x2="'+x0+'" y2="'+(oy+rh+16)+'" stroke="#697584" stroke-width="1"/>';
+    s+='<line x1="'+x1+'" y1="'+(oy+rh+8)+'" x2="'+x1+'" y2="'+(oy+rh+16)+'" stroke="#697584" stroke-width="1"/>';
+    s+='<text x="'+((x0+x1)/2)+'" y="'+(oy+rh+28)+'" text-anchor="middle" fill="#697584" font-size="10.5">间距 '+sx.toFixed(2)+' m</text>';
+  }
+  s+='<text x="'+ox+'" y="'+(oy-10)+'" fill="#697584" font-size="11">俯视 · '+L+'×'+W+'m（'+A.toFixed(1)+'㎡）· 净高 '+H.toFixed(2)+'m · '+ROOMS8[room8].name+'·'+ROOMS8[room8].scenes[scene].n+'方案</text>';
+  s+='<text x="'+ox+'" y="'+(oy+rh+42)+'" fill="#697584" font-size="10.5">筒灯 '+N+' 个（'+opt.p+'W）· 排布 '+nCol+'×'+nRow+' · 虚线圆=未用位</text>';
+  // 图例
+  const lx=ox+rw+12;
+  if(lx<vw-140){
+    s+='<g font-size="10.5" fill="#5F5E5A">';
+    if(hasMain){s+='<circle cx="'+lx+'" cy="'+(oy+14)+'" r="6" fill="#378ADD" fill-opacity=".3" stroke="#378ADD" stroke-width="1.5"/><text x="'+(lx+12)+'" y="'+(oy+18)+'">主灯</text>';}
+    s+='<circle cx="'+lx+'" cy="'+(oy+34)+'" r="6" fill="#1D9E75" fill-opacity=".3" stroke="#1D9E75" stroke-width="1.5"/><text x="'+(lx+12)+'" y="'+(oy+38)+'">筒射灯</text>';
+    if(hasStrip){s+='<rect x="'+(lx-6)+'" y="'+(oy+48)+'" width="12" height="8" fill="none" stroke="#D4537E" stroke-width="2" stroke-dasharray="4 2"/><text x="'+(lx+12)+'" y="'+(oy+56)+'">灯带</text>';}
+    s+='</g>';
+  }
+  $('a8_svg').innerHTML=s;
+}
+
+// 公式速查卡（静态）
+$('a8_formula').innerHTML='<thead><tr><th>步骤</th><th>公式</th><th>取值说明</th></tr></thead><tbody>'
+ +[['① 总光通','Φ总 = E目标 × A ÷ (UF × MF)','UF：主灯+筒灯混合取 0.50，无主灯取 0.42；MF 住宅 0.8'],
+    ['② 三层分摊','Φ主 : Φ筒 : Φ带 = 30 : 50 : 20（可按场景调）','会客 40/40/20；阅读 25/55/20；展柜 20/60/20；无主灯 0/100/0'],
+    ['③ 主灯直径','D = √(A ÷ 40)','吸顶灯 k=40；结果吸附 Ø300–1200 商品档'],
+    ['④ 主灯功率','W主 = Φ主 ÷ η','η 取 90 lm/W；再向上取商品档（24/36/48/60/72/96W）'],
+    ['⑤ 筒灯数量','N = Φ筒 ÷ Φ单灯','7W≈560lm｜9W≈810lm｜12W≈1080lm｜15W≈1350lm'],
+    ['⑥ 筒灯间距','s ≤ 装顶净高 × 1.2','无主灯方案收紧为 × 1.0；照度数与间距数取大者'],
+    ['⑦ 灯带','W/m = Φ带 ÷ L ÷ 70','L = 吊顶周长 − 遮挡；商品档 10 / 12 / 15 W/m'],
+    ['⑧ 回代验证','E实际 = (Φ主×0.55 + Φ筒×0.45 + Φ带×0.30) ×折损 ÷ A','按「实际选定规格与数量」回算（不是理论值）；落在目标 80%~140% 为合格，超出部分用调光消化']
+   ].map(r=>'<tr><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')
+ +'</tbody>';
+
+/* tabs */
+const TITLES={1:['房间平均照度','输入空间与灯具参数，估算平均照度并对照国标'],
+  2:['单灯点照度','验证筒灯/射灯的光斑落点与边缘衰减'],
+  3:['反算需要几盏','给定目标照度，反推灯数与总功率'],
+  4:['国标速查','GB 50034-2013 常用场所推荐照度'],
+  5:['布点间距图','俯视自动均布，给出间距与排布建议'],
+  6:['智能调光场景','基于满功率照度生成情景调光比例'],
+  7:['主灯选型（吊灯/吸顶）','客户选主灯时：算照度 → 定功率 → 定尺寸'],
+  8:['三层混光测算','客厅/餐厅/卧室：主灯+辅灯+灯带，一次算完']};
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');const t=b.dataset.t;$('p'+t).classList.add('active');
+  $('pageTitle').textContent=TITLES[t][0];$('pageSub').textContent=TITLES[t][1];
+}));
+
+calc1();calc2();calc3();calc5();calc6();calc7();applyRoom();
+</script>
+<script>
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').then(function(){console.log('SW 已注册，可离线/安装');})
+      .catch(function(e){console.warn('SW 注册失败',e);});
+  });
+}
+</script>
+</body>
+</html>

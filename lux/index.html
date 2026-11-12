@@ -174,6 +174,17 @@
   .layer .kv b.big{font-size:19px}
   .ratio-row{display:flex;height:30px;border-radius:9px;overflow:hidden;margin:12px 0 4px;font-size:11.5px;font-weight:600}
   .ratio-row > div{display:flex;align-items:center;justify-content:center;color:#fff}
+  /* ⑤ 可拖拽布点 */
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+  .mini{flex:1;min-width:62px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 6px;font-size:12.5px;font-weight:600;color:var(--navy);cursor:pointer;font-family:inherit;transition:.15s}
+  .mini:hover{border-color:var(--orange);color:#b8520a;background:var(--orange-soft)}
+  .mini.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .mode-tip{font-size:11.5px;color:var(--txt-3);margin:10px 0 0;line-height:1.6}
+  svg.room .lp circle{cursor:grab}
+  svg.room .lp:active circle{cursor:grabbing}
+  /* ⑧ 灯带参数 */
+  .strip-cfg{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .strip-cfg .field{flex:1;min-width:92px}
 
   /* PWA 手机增强 */
   *{-webkit-tap-highlight-color:transparent}
@@ -393,22 +404,30 @@
         </div>
       </section>
 
-      <!-- ⑤ 布点间距图 -->
+      <!-- ⑤ 布点定位图 -->
       <section class="panel" id="p5">
         <div class="card">
-          <h2><span class="dot"></span>布点间距建议图<span class="hint">俯视平面 · 自动均布</span></h2>
+          <h2><span class="dot"></span>布点定位图<span class="hint">俯视 · 拖动灯位 / 画灯带</span></h2>
           <div class="layout-wrap">
             <div>
               <div class="grid" style="grid-template-columns:repeat(2,1fr)">
                 <div class="field"><label>房间长 <span class="unit">m</span></label><input id="a5_L" type="number" value="5" min="0.5" step="0.1"></div>
                 <div class="field"><label>房间宽 <span class="unit">m</span></label><input id="a5_W" type="number" value="4" min="0.5" step="0.1"></div>
-                <div class="field"><label>灯具数量 <span class="unit">盏</span></label><input id="a5_N" type="number" value="6" min="1" step="1"></div>
+                <div class="field"><label>初始灯数 <span class="unit">盏</span></label><input id="a5_N" type="number" value="6" min="1" step="1"></div>
                 <div class="field"><label>安装高度 <span class="unit">m</span></label><input id="a5_H" type="number" value="2.6" min="0.1" step="0.1"></div>
               </div>
-              <div class="stat-row" style="margin-top:16px">
-                <div class="stat"><div class="k">横向间距</div><div class="v" id="a5_sx">—<small> m</small></div></div>
-                <div class="stat"><div class="k">纵向间距</div><div class="v" id="a5_sy">—<small> m</small></div></div>
-                <div class="stat"><div class="k">排布</div><div class="v" id="a5_grid">—</div></div>
+              <div class="btn-row" style="margin-top:12px">
+                <button class="mini" id="a5_add">＋ 加灯</button>
+                <button class="mini" id="a5_del">✕ 删灯</button>
+                <button class="mini" id="a5_strip">≈ 灯带</button>
+                <button class="mini" id="a5_reset">↺ 均布</button>
+                <button class="mini" id="a5_clear">⌫ 清空</button>
+              </div>
+              <p class="mode-tip" id="a5_modeTip">拖动圆点可手动定位；点空白处加一盏灯。</p>
+              <div class="stat-row" style="margin-top:12px">
+                <div class="stat"><div class="k">灯数</div><div class="v" id="a5_n">—</div></div>
+                <div class="stat"><div class="k">平均间距</div><div class="v" id="a5_avg">—<small> m</small></div></div>
+                <div class="stat"><div class="k">灯带长</div><div class="v" id="a5_bandL">—<small> m</small></div></div>
               </div>
               <p class="note" id="a5_tip">—</p>
             </div>
@@ -596,6 +615,20 @@
               <option value="2.0">无吊顶，扣中央空调/检修口（扣 2.0m）</option>
             </select>
           </div>
+          <!-- 灯带参数（氛围层选型） -->
+          <div class strip-cfg>
+            <div class="field" style="min-width:92px"><label>色温 <span class="unit">K</span></label>
+              <select id="a8_cct"><option>2700</option><option>3000</option><option selected>4000</option><option>5000</option><option>6000</option></select></div>
+            <div class="field" style="min-width:92px"><label>显指 Ra</label>
+              <select id="a8_ra"><option>80</option><option selected>90</option><option>95</option><option>97</option></select></div>
+            <div class="field" style="min-width:92px"><label>光效 <span class="unit">lm/W</span></label>
+              <input id="a8_eta" type="number" value="70" min="40" max="220" step="5"></div>
+            <div class="field" style="min-width:104px"><label>功率档 <span class="unit">W/m</span></label>
+              <select id="a8_bandmode"><option value="auto" selected>自动</option><option>5</option><option>7</option><option>10</option><option>12</option><option>15</option><option>20</option></select></div>
+            <div class="field" style="min-width:116px"><label>供电方式</label>
+              <select id="a8_drive"><option>恒压 DC24V</option><option>恒压 DC12V</option><option>恒流</option></select></div>
+          </div>
+          <p class="note" style="margin-top:8px;font-size:11.5px">灯带选型：色温/显指给选型建议；光效参与功率密度与回代照度计算；功率档可选固定档或自动吸附；供电方式决定驱动器/变压器。</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="act ghost" onclick="sync8From1()">↺ 带入①房间参数</button>
           </div>
@@ -740,42 +773,67 @@ const STD=[['起居室·一般活动',100,'住宅'],['起居室·书写阅读',3
   ['商店营业厅',300,'商业'],['教室',300,'教育'],['诊室',300,'医疗']];
 $('stdBody').innerHTML=STD.map(r=>`<tr><td>${r[0]}</td><td><b style="color:var(--navy)">${r[1]}</b></td><td><span class="tag">${r[2]}</span></td></tr>`).join('');
 
-/* ⑤ 布点图 */
+/* ⑤ 可拖拽布点图 */
+const a5svg=document.getElementById('a5_svg');
+let a5lights=[],a5strips=[],a5stripPts=[],a5mode='drag',a5touched=false,a5pL=5,a5pW=4,a5pN=6;
+const A5PAD=24,A5VB=400,A5VBH=320;
 function calc5(){
   const L=+$('a5_L').value,W=+$('a5_W').value,N=Math.max(1,Math.round(+$('a5_N').value)),H=+$('a5_H').value;
-  let cols=Math.max(1,Math.round(Math.sqrt(N*L/W)));
-  let rows=Math.ceil(N/cols);
-  const sx=L/cols, sy=W/rows;
-  const pts=[];
-  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)pts.push({x:(c+0.5)*sx,y:(r+0.5)*sy});
-  const used=pts.slice(0,N);
-  $('a5_sx').innerHTML=sx.toFixed(2)+'<small> m</small>';
-  $('a5_sy').innerHTML=sy.toFixed(2)+'<small> m</small>';
-  $('a5_grid').textContent=cols+' × '+rows+(cols*rows>N?'（'+N+' 用）':'');
-  const ideal=H;
-  let tip=`建议间距 ≈ 安装高度 × 1.0~1.5（即 ${ideal.toFixed(1)}~${(ideal*1.5).toFixed(1)} m）。`;
-  if(Math.max(sx,sy)>ideal*1.8) tip+=' 当前间距偏大，可能明暗不均，建议增加灯数或减小间距。';
-  else if(Math.min(sx,sy)<ideal*0.6) tip+=' 当前间距偏小，可适当减灯节能。';
-  $('a5_tip').textContent=tip;
-  drawRoom(L,W,used);
-}
-function drawRoom(L,W,pts){
-  const sx_vb=400,sy_vb=320,pad=24;
-  const scale=Math.min((sx_vb-2*pad)/L,(sy_vb-2*pad)/W);
-  const w=L*scale,h=W*scale,ox=(sx_vb-w)/2,oy=(sy_vb-h)/2;
-  const px=x=>ox+x*scale, py=y=>oy+y*scale;
-  let s=`<rect x="${ox}" y="${oy}" width="${w}" height="${h}" rx="8" fill="#fbfcfe" stroke="#16243f" stroke-width="2"/>`;
-  pts.forEach(p=>{s+=`<circle cx="${px(p.x)}" cy="${py(p.y)}" r="6.5" fill="#ff7a18"/><circle cx="${px(p.x)}" cy="${py(p.y)}" r="11" fill="none" stroke="#ff9d4d" stroke-width="1.2" stroke-dasharray="3 3"/>`;});
-  if(pts.length>1){
-    const p0=pts[0],p1=pts.find(p=>Math.abs(p.y-p0.y)<1e-6&&p.x>p0.x)||pts[1];
-    const x0=px(p0.x),x1=px(p1.x);
-    s+=`<line x1="${x0}" y1="${oy+h+4}" x2="${x1}" y2="${oy+h+4}" stroke="#697584" stroke-width="1"/><line x1="${x0}" y1="${oy+h}" x2="${x0}" y2="${oy+h+8}" stroke="#697584" stroke-width="1"/><line x1="${x1}" y1="${oy+h}" x2="${x1}" y2="${oy+h+8}" stroke="#697584" stroke-width="1"/>`;
+  if(a5lights.length===0){ a5init(); }
+  else {
+    if(L!==a5pL||W!==a5pW){ const kx=L/a5pL,ky=W/a5pW; a5lights.forEach(p=>{p.x*=kx;p.y*=ky;}); a5strips.forEach(t=>{t.x1*=kx;t.y1*=ky;t.x2*=kx;t.y2*=ky;}); a5pL=L;a5pW=W; }
+    if(N!==a5pN && !a5touched){ a5init(); }
   }
-  s+=`<text x="${ox}" y="${oy-8}" fill="#697584" font-size="11">俯视图 · 共 ${pts.length} 盏</text>`;
-  $('a5_svg').innerHTML=s;
+  a5pL=L;a5pW=W;a5pN=N; a5draw();
 }
-watch(['a5_L','a5_W','a5_N','a5_H'],calc5);
-function syncFrom3(){$('a5_L').value=$('a3_L').value;$('a5_W').value=$('a3_W').value;$('a5_N').value=$('a3_N').textContent;calc5();}
+function a5init(){ const L=+$('a5_L').value,W=+$('a5_W').value,N=Math.max(1,Math.round(+$('a5_N').value)); a5lights=[]; let cols=Math.max(1,Math.round(Math.sqrt(N*L/W))),rows=Math.ceil(N/cols); const sx=L/cols,sy=W/rows; for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){ if(a5lights.length<N)a5lights.push({x:(c+0.5)*sx,y:(r+0.5)*sy}); } a5strips=[];a5stripPts=[];a5touched=false;a5pL=L;a5pW=W;a5pN=N; }
+function a5scale(){ const L=+$('a5_L').value,W=+$('a5_W').value; const sc=Math.min((A5VB-2*A5PAD)/L,(A5VBH-2*A5PAD)/W); return {sc,w:L*sc,h:W*sc,ox:(A5VB-L*sc)/2,oy:(A5VBH-W*sc)/2}; }
+function a5draw(){
+  const L=+$('a5_L').value,W=+$('a5_W').value; const {sc,w,h,ox,oy}=a5scale(); const PX=x=>ox+x*sc,PY=y=>oy+y*sc;
+  let s=`<rect x="${ox}" y="${oy}" width="${w}" height="${h}" rx="8" fill="#fbfcfe" stroke="#16243f" stroke-width="2"/>`;
+  a5strips.forEach(t=>{ s+=`<line x1="${PX(t.x1)}" y1="${PY(t.y1)}" x2="${PX(t.x2)}" y2="${PY(t.y2)}" stroke="#D4537E" stroke-width="5" stroke-linecap="round" opacity="0.85"/>`; });
+  if(a5stripPts.length===1){ const p=a5stripPts[0]; s+=`<circle cx="${PX(p.x)}" cy="${PY(p.y)}" r="4" fill="#D4537E"/>`; }
+  a5lights.forEach((p,i)=>{ const sel=(a5mode==='del'); s+=`<g class="lp" data-i="${i}">`
+    +`<circle cx="${PX(p.x)}" cy="${PY(p.y)}" r="11" fill="${a5mode==='strip'?'#f0f0f3':'#fff'}" stroke="#ff7a18" stroke-width="2"/>`
+    +`<circle cx="${PX(p.x)}" cy="${PY(p.y)}" r="6.5" fill="#ff7a18"/>`
+    +(sel?`<circle cx="${PX(p.x)}" cy="${PY(p.y)}" r="14" fill="none" stroke="#D4537E" stroke-width="1.5" stroke-dasharray="3 3"/>`:'')
+    +`<text x="${PX(p.x)}" y="${PY(p.y)-14}" font-size="9" fill="#697584" text-anchor="middle">${i+1}</text></g>`; });
+  s+=`<line x1="${ox}" y1="${oy+h+4}" x2="${ox+w}" y2="${oy+h+4}" stroke="#697584" stroke-width="1"/><line x1="${ox}" y1="${oy+h}" x2="${ox}" y2="${oy+h+8}" stroke="#697584" stroke-width="1"/><line x1="${ox+w}" y1="${oy+h}" x2="${ox+w}" y2="${oy+h+8}" stroke="#697584" stroke-width="1"/>`;
+  s+=`<text x="${ox+w/2}" y="${oy+h+18}" font-size="11" fill="#697584" text-anchor="middle">${L} m</text>`;
+  s+=`<text x="${ox-6}" y="${oy+h/2}" font-size="11" fill="#697584" text-anchor="middle" transform="rotate(-90 ${ox-6} ${oy+h/2})">${W} m</text>`;
+  s+=`<text x="${ox}" y="${oy-8}" fill="#697584" font-size="11">俯视图 · ${a5lights.length} 盏${a5strips.length?(' + '+a5strips.length+' 灯带'):''}</text>`;
+  $('a5_svg').innerHTML=s; a5stats();
+}
+function a5stats(){
+  const L=+$('a5_L').value,W=+$('a5_W').value,H=+$('a5_H').value;
+  $('a5_n').textContent=a5lights.length;
+  let sum=0,cnt=0; a5lights.forEach((p,i)=>{ let dmin=1e9; a5lights.forEach((q,j)=>{ if(i!==j){ const d=Math.hypot(p.x-q.x,p.y-q.y); if(d<dmin)dmin=d; } }); if(dmin<1e9){sum+=dmin;cnt++;} });
+  const avg=cnt?sum/cnt:0; $('a5_avg').innerHTML=(cnt?avg.toFixed(2):'—')+'<small> m</small>';
+  const bandL=a5strips.reduce((s,t)=>s+Math.hypot(t.x2-t.x1,t.y2-t.y1),0); $('a5_bandL').innerHTML=(a5strips.length?bandL.toFixed(1):'0.0')+'<small> m</small>';
+  let tip=`建议间距 ≈ 安装高度 × 1.0~1.5（即 ${H.toFixed(1)}~${(H*1.5).toFixed(1)} m）。`;
+  if(a5lights.length>1){ if(avg>H*1.8) tip+=' 平均间距偏大，可能明暗不均，建议加灯或把灯位拖近工作区。'; else if(avg<H*0.6) tip+=' 平均间距偏小，可适当减灯节能。'; else tip+=' 当前间距落在舒适区间。'; }
+  if(a5strips.length) tip+=' 灯带总长 '+bandL.toFixed(1)+'m，按实际需求选功率档即可（一般 10~15W/m）。';
+  $('a5_tip').textContent=tip;
+}
+function a5clientToM(evt){ const pt=a5svg.createSVGPoint(); pt.x=evt.clientX; pt.y=evt.clientY; const m=a5svg.getScreenCTM().inverse(); const p=pt.matrixTransform(m); const L=+$('a5_L').value,W=+$('a5_W').value; const {sc,ox,oy}=a5scale(); let x=(p.x-ox)/sc,y=(p.y-oy)/sc; x=Math.max(0,Math.min(L,x)); y=Math.max(0,Math.min(W,y)); return {x,y}; }
+let a5drag=null;
+a5svg.addEventListener('pointerdown',e=>{
+  const g=e.target.closest('.lp');
+  if(a5mode==='del'){ if(g){ a5lights.splice(+g.dataset.i,1); a5touched=true; a5draw(); } return; }
+  if(a5mode==='strip'){ const m=a5clientToM(e); a5stripPts.push(m); if(a5stripPts.length===2){ a5strips.push({x1:a5stripPts[0].x,y1:a5stripPts[0].y,x2:a5stripPts[1].x,y2:a5stripPts[1].y}); a5stripPts=[]; } a5draw(); return; }
+  if(g){ a5drag=+g.dataset.i; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} } else { const m=a5clientToM(e); a5lights.push(m); a5touched=true; a5draw(); }
+});
+a5svg.addEventListener('pointermove',e=>{ if(a5drag!=null){ a5lights[a5drag]=a5clientToM(e); a5touched=true; a5draw(); } });
+a5svg.addEventListener('pointerup',e=>{ if(a5drag!=null){ a5drag=null; a5stats(); } });
+['a5_add','a5_del','a5_strip','a5_reset','a5_clear'].forEach(id=>{ const b=$(id); if(!b)return; b.addEventListener('click',()=>{
+  if(id==='a5_add'){ a5lights.push({x:+$('a5_L').value/2,y:+$('a5_W').value/2}); a5touched=true; a5draw(); }
+  else if(id==='a5_del'){ a5mode=(a5mode==='del')?'drag':'del'; $('a5_del').classList.toggle('on',a5mode==='del'); $('a5_strip').classList.remove('on'); a5stripPts=[]; a5draw(); $('a5_modeTip').textContent=a5mode==='del'?'删灯模式：点击要删除的灯位即可。':'拖动圆点可手动定位；点空白处加一盏灯。'; }
+  else if(id==='a5_strip'){ a5mode=(a5mode==='strip')?'drag':'strip'; $('a5_strip').classList.toggle('on',a5mode==='strip'); $('a5_del').classList.remove('on'); a5stripPts=[]; a5draw(); $('a5_modeTip').textContent=a5mode==='strip'?'灯带模式：依次点击两个点画出一条灯带。':'拖动圆点可手动定位；点空白处加一盏灯。'; }
+  else if(id==='a5_reset'){ a5init(); a5draw(); }
+  else if(id==='a5_clear'){ a5lights=[]; a5strips=[]; a5stripPts=[]; a5touched=true; a5draw(); }
+}); });
+watch(['a5_L','a5_W','a5_H','a5_N'],calc5);
+function syncFrom3(){$('a5_L').value=$('a3_L').value;$('a5_W').value=$('a3_W').value;$('a5_N').value=$('a3_N').textContent;a5touched=false;a5init();a5draw();}
 
 /* ⑥ 调光场景 */
 const SCENES=[
@@ -1171,7 +1229,7 @@ function calc8(){
   // ---- 灯带层 ----
   // 关键：灯带是氛围层，照度贡献小（UF≈0.30），且商品最小档 10W/m 常远超需求，
   // 必须按「需求」与「最小档」取小，否则会把总照度严重推高（实测可达 260%+）。
-  let Lstrip=0, band=0, overBand=0, wpmNeed=0;
+  let Lstrip=0, band=0, overBand=0, wpmNeed=0, etaB=70;
   if(f[2]>0){
     // 灯带长度基准按房间性质区分：
     //   客厅 = 吊顶周长 − 遮挡（回光灯槽）
@@ -1182,17 +1240,19 @@ function calc8(){
     else if(room8==='dining') base=Math.max(1.5,Math.max(L,W)*0.9-0.6);
     else base=Math.max(1.5,Math.max(L,W)*0.8);
     Lstrip=Math.round(base*10)/10;
-    const etaB=70, wpm=p[2]/Lstrip/etaB;
+    etaB=+$('a8_eta').value||70;
+    const wpm=p[2]/Lstrip/etaB;
     wpmNeed=wpm;
-    // 商品档：7 / 10 / 12 / 15 / 20 W/m；取不小于需求的最小档
-    const BANDS=[7,10,12,15,20];
-    band=BANDS.find(b=>b>=wpm)||BANDS[BANDS.length-1];
+    // 功率档：自动吸附 或 用户指定固定档
+    const bm=$('a8_bandmode').value;
+    const BANDS=[5,7,10,12,15,20];
+    band=(bm==='auto')?(BANDS.find(b=>b>=wpm)||BANDS[BANDS.length-1]):+bm;
     overBand=band/wpm;
     const lenName=room8==='living'?'吊顶周长':room8==='dining'?'餐边柜展开':'衣柜内展开';
     $('a8_p3').textContent=Math.round(p[2]).toLocaleString()+' lm';
     $('a8_len').innerHTML=Lstrip.toFixed(1)+'<small> m</small>';
     $('a8_wpm').textContent=wpm.toFixed(1)+' W/m';
-    $('a8_tier').textContent=band+' W/m'+(overBand>1.6?'（需求偏低）':'');
+    $('a8_tier').textContent=band+' W/m'+(overBand>1.6?'（需求偏低）':'')+(bm!=='auto'?' · 手动':'');
     $('a8_lenNote').textContent='按'+lenName+'估算 · '+(room8==='living'?'已扣窗帘盒/柜体遮挡':room8==='dining'?'柜内灯带，走顶面不开槽':'柜内感应灯带，嵌入柜顶铝槽');
   }else{
     // 清空时必须同时清 innerHTML 与 textContent，否则会残留上一次的内容
@@ -1203,7 +1263,7 @@ function calc8(){
   // 用「实际选定的规格与数量」回算，而非分摊的理论值——这才是真校验。
   // 灯带若被商品档位抬高（overBand>1），按调光压到需求量参与计算——灯带本就该靠调光控亮度。
   const stripDim=overBand>1?Math.min(1,1/overBand):1;   // 灯带有效调光比例
-  const phiDown=N*opt.l, phiMain=hasMain?mainW*90:0, phiStrip=f[2]>0?Lstrip*band*70*stripDim:0;
+  const phiDown=N*opt.l, phiMain=hasMain?mainW*90:0, phiStrip=f[2]>0?Lstrip*band*etaB*stripDim:0;
   const Ereal=(phiMain*uf1+phiDown*uf2+phiStrip*uf3)*dispatch/A;
   const rate=Ereal/Et;
   $('a8_Ereal').innerHTML=Math.round(Ereal)+'<small> lx</small>';
@@ -1237,6 +1297,14 @@ function calc8(){
     if(f[1]>0) msg+='<div class="warnbox">· 床头阅读灯务必做<strong>双控（床头双联开关）</strong>，否则躺下后无法关灯，这是卧室最常见的使用痛点。</div>';
   }
   if(overBand>1.5) msg+='<div class="warnbox">· 灯带按光通需求只需 '+wpmNeed.toFixed(1)+' W/m，但商品最小档是 '+band+' W/m（超出 '+(overBand).toFixed(1)+' 倍）。这是灯带的常态——<strong>务必接调光，开到 30~40% 亮度</strong>，既达到设计效果又不浪费电、不过曝。</div>';
+  // 灯带选型参数建议
+  if(f[2]>0){
+    const cct=+$('a8_cct').value, ra=+$('a8_ra').value, drive=$('a8_drive').value;
+    let led='色温 '+cct+'K'+(cct>=5000?'（冷白，厨房/工作区适用）':cct>=3500?'（中性，通用）':'（暖白，客厅/卧室更温馨）');
+    led+='；显指 Ra'+ra+(ra>=95?'（高显指，还原材质真实色彩，柜内/展示推荐）':'（常规够用）');
+    led+='；'+drive+'（'+(drive.indexOf('24')>=0?'长距离/多灯带用 24V 压降小':drive.indexOf('12')>=0?'短距离用 12V，注意压降':'恒流方案光衰一致，工装常用')+'）';
+    msg+='<div class="okbox">· 灯带规格建议：'+led+'。</div>';
+  }
   $('a8_msg').innerHTML=msg;
 
   let tip='筒灯沿长边排布 '+nSpacing+' 个已可满足间距（≤'+sMax.toFixed(2)+'m）。';
@@ -1248,7 +1316,7 @@ function calc8(){
 
   draw8(L,W,H,A,N,nSpacing,hasMain,Dm,opt,f[2]>0,sc8);
 }
-watch(['a8_L','a8_W','a8_H','a8_hw','a8_Et','a8_mf','a8_cond'],calc8);
+watch(['a8_L','a8_W','a8_H','a8_hw','a8_Et','a8_mf','a8_cond','a8_eta','a8_bandmode','a8_cct','a8_ra','a8_drive'],calc8);
 function sync8From1(){
   $('a8_L').value=$('a1_L').value;$('a8_W').value=$('a1_W').value;
   $('a8_hw').value=$('a1_hw').value;$('a8_H').value=(+$('a1_H').value+0.2).toFixed(2);
@@ -1325,7 +1393,7 @@ $('a8_formula').innerHTML='<thead><tr><th>步骤</th><th>公式</th><th>取值�
     ['④ 主灯功率','W主 = Φ主 ÷ η','η 取 90 lm/W；再向上取商品档（24/36/48/60/72/96W）'],
     ['⑤ 筒灯数量','N = Φ筒 ÷ Φ单灯','7W≈560lm｜9W≈810lm｜12W≈1080lm｜15W≈1350lm'],
     ['⑥ 筒灯间距','s ≤ 装顶净高 × 1.2','无主灯方案收紧为 × 1.0；照度数与间距数取大者'],
-    ['⑦ 灯带','W/m = Φ带 ÷ L ÷ 70','L = 吊顶周长 − 遮挡；商品档 10 / 12 / 15 W/m'],
+    ['⑦ 灯带','W/m = Φ带 ÷ L ÷ η','η=光效(默认70)；L = 吊顶周长 − 遮挡；档 5/7/10/12/15/20 W/m'],
     ['⑧ 回代验证','E实际 = (Φ主×0.55 + Φ筒×0.45 + Φ带×0.30) ×折损 ÷ A','按「实际选定规格与数量」回算（不是理论值）；落在目标 80%~140% 为合格，超出部分用调光消化']
    ].map(r=>'<tr><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')
  +'</tbody>';

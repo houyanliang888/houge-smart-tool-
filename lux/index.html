@@ -180,8 +180,12 @@
   .mini:hover{border-color:var(--orange);color:#b8520a;background:var(--orange-soft)}
   .mini.on{background:var(--orange);color:#fff;border-color:var(--orange)}
   .mode-tip{font-size:11.5px;color:var(--txt-3);margin:10px 0 0;line-height:1.6}
-  svg.room .lp circle{cursor:grab}
-  svg.room .lp:active circle{cursor:grabbing}
+  svg.room{touch-action:none;-webkit-user-select:none;user-select:none}
+  svg.room .lp{cursor:grab}
+  svg.room .lp:active{cursor:grabbing}
+  svg.room .lp .hit{fill:transparent}
+  svg.room .lp .dot{transition:fill .08s}
+  svg.room .lp:hover .dot{fill:#ffb066}
   /* ⑧ 灯带参数 */
   .strip-cfg{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
   .strip-cfg .field{flex:1;min-width:92px}
@@ -423,7 +427,7 @@
                 <button class="mini" id="a5_reset">↺ 均布</button>
                 <button class="mini" id="a5_clear">⌫ 清空</button>
               </div>
-              <p class="mode-tip" id="a5_modeTip">拖动圆点可手动定位；点空白处加一盏灯。</p>
+              <p class="mode-tip" id="a5_modeTip">拖动圆点可手动定位（点不中也能抓住）；点空白处新增一盏。</p>
               <div class="stat-row" style="margin-top:12px">
                 <div class="stat"><div class="k">灯数</div><div class="v" id="a5_n">—</div></div>
                 <div class="stat"><div class="k">平均间距</div><div class="v" id="a5_avg">—<small> m</small></div></div>
@@ -775,7 +779,7 @@ $('stdBody').innerHTML=STD.map(r=>`<tr><td>${r[0]}</td><td><b style="color:var(-
 
 /* ⑤ 可拖拽布点图 */
 const a5svg=document.getElementById('a5_svg');
-let a5lights=[],a5strips=[],a5stripPts=[],a5mode='drag',a5touched=false,a5pL=5,a5pW=4,a5pN=6;
+let a5lights=[],a5strips=[],a5stripPts=[],a5mode='drag',a5touched=false,a5pL=5,a5pW=4,a5pN=6,a5drag=null,a5stripDraw=null;
 const A5PAD=24,A5VB=400,A5VBH=320;
 function calc5(){
   const L=+$('a5_L').value,W=+$('a5_W').value,N=Math.max(1,Math.round(+$('a5_N').value)),H=+$('a5_H').value;
@@ -793,11 +797,13 @@ function a5draw(){
   let s=`<rect x="${ox}" y="${oy}" width="${w}" height="${h}" rx="8" fill="#fbfcfe" stroke="#16243f" stroke-width="2"/>`;
   a5strips.forEach(t=>{ s+=`<line x1="${PX(t.x1)}" y1="${PY(t.y1)}" x2="${PX(t.x2)}" y2="${PY(t.y2)}" stroke="#D4537E" stroke-width="5" stroke-linecap="round" opacity="0.85"/>`; });
   if(a5stripPts.length===1){ const p=a5stripPts[0]; s+=`<circle cx="${PX(p.x)}" cy="${PY(p.y)}" r="4" fill="#D4537E"/>`; }
-  a5lights.forEach((p,i)=>{ const sel=(a5mode==='del'); s+=`<g class="lp" data-i="${i}">`
-    +`<circle cx="${PX(p.x)}" cy="${PY(p.y)}" r="11" fill="${a5mode==='strip'?'#f0f0f3':'#fff'}" stroke="#ff7a18" stroke-width="2"/>`
-    +`<circle cx="${PX(p.x)}" cy="${PY(p.y)}" r="6.5" fill="#ff7a18"/>`
-    +(sel?`<circle cx="${PX(p.x)}" cy="${PY(p.y)}" r="14" fill="none" stroke="#D4537E" stroke-width="1.5" stroke-dasharray="3 3"/>`:'')
-    +`<text x="${PX(p.x)}" y="${PY(p.y)-14}" font-size="9" fill="#697584" text-anchor="middle">${i+1}</text></g>`; });
+  a5lights.forEach((p,i)=>{ const sel=(a5mode==='del'); const cx=PX(p.x),cy=PY(p.y); s+=`<g class="lp" data-i="${i}" id="lpN${i}">`
+    +`<circle class="hit" cx="${cx}" cy="${cy}" r="24"/>`
+    +`<circle class="dot" cx="${cx}" cy="${cy}" r="${sel?14:11}" fill="${a5mode==='strip'?'#f0f0f3':'#fff'}" stroke="#ff7a18" stroke-width="2"/>`
+    +`<circle class="core" cx="${cx}" cy="${cy}" r="6.5" fill="#ff7a18"/>`
+    +(sel?`<circle cx="${cx}" cy="${cy}" r="16" fill="none" stroke="#D4537E" stroke-width="1.5" stroke-dasharray="3 3"/>`:'')
+    +`<text x="${cx}" y="${cy-15}" font-size="9" fill="#697584" text-anchor="middle">${i+1}</text></g>`; });
+  if(a5stripDraw){ s+=`<line x1="${PX(a5stripDraw.x1)}" y1="${PY(a5stripDraw.y1)}" x2="${PX(a5stripDraw.x2)}" y2="${PY(a5stripDraw.y2)}" stroke="#D4537E" stroke-width="3" stroke-dasharray="6 4" stroke-linecap="round"/>`; }
   s+=`<line x1="${ox}" y1="${oy+h+4}" x2="${ox+w}" y2="${oy+h+4}" stroke="#697584" stroke-width="1"/><line x1="${ox}" y1="${oy+h}" x2="${ox}" y2="${oy+h+8}" stroke="#697584" stroke-width="1"/><line x1="${ox+w}" y1="${oy+h}" x2="${ox+w}" y2="${oy+h+8}" stroke="#697584" stroke-width="1"/>`;
   s+=`<text x="${ox+w/2}" y="${oy+h+18}" font-size="11" fill="#697584" text-anchor="middle">${L} m</text>`;
   s+=`<text x="${ox-6}" y="${oy+h/2}" font-size="11" fill="#697584" text-anchor="middle" transform="rotate(-90 ${ox-6} ${oy+h/2})">${W} m</text>`;
@@ -816,19 +822,29 @@ function a5stats(){
   $('a5_tip').textContent=tip;
 }
 function a5clientToM(evt){ const pt=a5svg.createSVGPoint(); pt.x=evt.clientX; pt.y=evt.clientY; const m=a5svg.getScreenCTM().inverse(); const p=pt.matrixTransform(m); const L=+$('a5_L').value,W=+$('a5_W').value; const {sc,ox,oy}=a5scale(); let x=(p.x-ox)/sc,y=(p.y-oy)/sc; x=Math.max(0,Math.min(L,x)); y=Math.max(0,Math.min(W,y)); return {x,y}; }
-let a5drag=null;
+function a5toPx(){ const {sc,ox,oy}=a5scale(); return (x,y)=>({cx:ox+x*sc,cy:oy+y*sc}); }
+function a5nearest(e){ const to=a5toPx(); const pt=a5svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const p=pt.matrixTransform(a5svg.getScreenCTM().inverse()); let bi=-1,bd=1e9; a5lights.forEach((q,j)=>{ const {cx,cy}=to(q.x,q.y); const d=Math.hypot(p.x-cx,p.y-cy); if(d<bd){bd=d;bi=j;} }); return {i:bi,dist:bd}; }
+function a5placeLightEl(i){ const g=document.getElementById('lpN'+i); if(!g)return; const {cx,cy}=a5toPx()(a5lights[i].x,a5lights[i].y); g.querySelectorAll('circle').forEach(c=>{ c.setAttribute('cx',cx); c.setAttribute('cy',cy); }); const t=g.querySelector('text'); if(t){ t.setAttribute('x',cx); t.setAttribute('y',cy-15); } }
 a5svg.addEventListener('pointerdown',e=>{
-  const g=e.target.closest('.lp');
-  if(a5mode==='del'){ if(g){ a5lights.splice(+g.dataset.i,1); a5touched=true; a5draw(); } return; }
-  if(a5mode==='strip'){ const m=a5clientToM(e); a5stripPts.push(m); if(a5stripPts.length===2){ a5strips.push({x1:a5stripPts[0].x,y1:a5stripPts[0].y,x2:a5stripPts[1].x,y2:a5stripPts[1].y}); a5stripPts=[]; } a5draw(); return; }
-  if(g){ a5drag=+g.dataset.i; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} } else { const m=a5clientToM(e); a5lights.push(m); a5touched=true; a5draw(); }
+  e.preventDefault();
+  const m=a5clientToM(e);
+  if(a5mode==='del'){ const n=a5nearest(e); if(n.i>=0 && n.dist<=30){ a5lights.splice(n.i,1); a5touched=true; a5draw(); } return; }
+  if(a5mode==='strip'){ a5stripDraw={x1:m.x,y1:m.y,x2:m.x,y2:m.y}; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} a5draw(); return; }
+  const n=a5nearest(e);
+  if(n.i>=0 && n.dist<=28){ a5drag=n.i; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} }
+  else { a5lights.push(m); a5touched=true; a5drag=a5lights.length-1; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} a5draw(); }
 });
-a5svg.addEventListener('pointermove',e=>{ if(a5drag!=null){ a5lights[a5drag]=a5clientToM(e); a5touched=true; a5draw(); } });
-a5svg.addEventListener('pointerup',e=>{ if(a5drag!=null){ a5drag=null; a5stats(); } });
+a5svg.addEventListener('pointermove',e=>{
+  if(a5drag!=null){ a5lights[a5drag]=a5clientToM(e); a5touched=true; a5placeLightEl(a5drag); a5stats(); }
+  else if(a5stripDraw){ const m=a5clientToM(e); a5stripDraw.x2=m.x; a5stripDraw.y2=m.y; a5draw(); }
+});
+function a5end(){ if(a5drag!=null){ a5drag=null; a5draw(); } if(a5stripDraw){ if(Math.hypot(a5stripDraw.x2-a5stripDraw.x1,a5stripDraw.y2-a5stripDraw.y1)>0.05){ a5strips.push({x1:a5stripDraw.x1,y1:a5stripDraw.y1,x2:a5stripDraw.x2,y2:a5stripDraw.y2}); } a5stripDraw=null; a5draw(); } }
+a5svg.addEventListener('pointerup',a5end);
+a5svg.addEventListener('pointercancel',a5end);
 ['a5_add','a5_del','a5_strip','a5_reset','a5_clear'].forEach(id=>{ const b=$(id); if(!b)return; b.addEventListener('click',()=>{
   if(id==='a5_add'){ a5lights.push({x:+$('a5_L').value/2,y:+$('a5_W').value/2}); a5touched=true; a5draw(); }
-  else if(id==='a5_del'){ a5mode=(a5mode==='del')?'drag':'del'; $('a5_del').classList.toggle('on',a5mode==='del'); $('a5_strip').classList.remove('on'); a5stripPts=[]; a5draw(); $('a5_modeTip').textContent=a5mode==='del'?'删灯模式：点击要删除的灯位即可。':'拖动圆点可手动定位；点空白处加一盏灯。'; }
-  else if(id==='a5_strip'){ a5mode=(a5mode==='strip')?'drag':'strip'; $('a5_strip').classList.toggle('on',a5mode==='strip'); $('a5_del').classList.remove('on'); a5stripPts=[]; a5draw(); $('a5_modeTip').textContent=a5mode==='strip'?'灯带模式：依次点击两个点画出一条灯带。':'拖动圆点可手动定位；点空白处加一盏灯。'; }
+  else if(id==='a5_del'){ a5mode=(a5mode==='del')?'drag':'del'; $('a5_del').classList.toggle('on',a5mode==='del'); $('a5_strip').classList.remove('on'); a5stripPts=[]; a5stripDraw=null; a5draw(); $('a5_modeTip').textContent=a5mode==='del'?'删灯模式：点击灯位即可删除（靠近也能点中）。':'拖动圆点可手动定位（点不中也能抓住）；点空白处新增一盏。'; }
+  else if(id==='a5_strip'){ a5mode=(a5mode==='strip')?'drag':'strip'; $('a5_strip').classList.toggle('on',a5mode==='strip'); $('a5_del').classList.remove('on'); a5stripPts=[]; a5stripDraw=null; a5draw(); $('a5_modeTip').textContent=a5mode==='strip'?'灯带模式：按住并拖动，画出一条灯带。':'拖动圆点可手动定位（点不中也能抓住）；点空白处新增一盏。'; }
   else if(id==='a5_reset'){ a5init(); a5draw(); }
   else if(id==='a5_clear'){ a5lights=[]; a5strips=[]; a5stripPts=[]; a5touched=true; a5draw(); }
 }); });

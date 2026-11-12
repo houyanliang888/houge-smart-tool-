@@ -179,6 +179,7 @@
   .mini{flex:1;min-width:62px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 6px;font-size:12.5px;font-weight:600;color:var(--navy);cursor:pointer;font-family:inherit;transition:.15s}
   .mini:hover{border-color:var(--orange);color:#b8520a;background:var(--orange-soft)}
   .mini.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .mini:disabled{opacity:.4;cursor:not-allowed;background:#fff;color:var(--txt-3);border-color:var(--line)}
   .mode-tip{font-size:11.5px;color:var(--txt-3);margin:10px 0 0;line-height:1.6}
   svg.room{touch-action:none;-webkit-user-select:none;user-select:none}
   svg.room .lp{cursor:grab}
@@ -426,6 +427,7 @@
                 <button class="mini" id="a5_strip">≈ 灯带</button>
                 <button class="mini" id="a5_reset">↺ 均布</button>
                 <button class="mini" id="a5_clear">⌫ 清空</button>
+                <button class="mini" id="a5_undo" disabled>⤺ 撤销</button>
               </div>
               <p class="mode-tip" id="a5_modeTip">拖动圆点可手动定位（点不中也能抓住）；点空白处新增一盏。</p>
               <div class="stat-row" style="margin-top:12px">
@@ -780,6 +782,7 @@ $('stdBody').innerHTML=STD.map(r=>`<tr><td>${r[0]}</td><td><b style="color:var(-
 /* ⑤ 可拖拽布点图 */
 const a5svg=document.getElementById('a5_svg');
 let a5lights=[],a5strips=[],a5stripPts=[],a5mode='drag',a5touched=false,a5pL=5,a5pW=4,a5pN=6,a5drag=null,a5stripDraw=null;
+let a5undo=[]; const A5UNDO_MAX=60;
 const A5PAD=24,A5VB=400,A5VBH=320;
 function calc5(){
   const L=+$('a5_L').value,W=+$('a5_W').value,N=Math.max(1,Math.round(+$('a5_N').value)),H=+$('a5_H').value;
@@ -825,31 +828,36 @@ function a5clientToM(evt){ const pt=a5svg.createSVGPoint(); pt.x=evt.clientX; pt
 function a5toPx(){ const {sc,ox,oy}=a5scale(); return (x,y)=>({cx:ox+x*sc,cy:oy+y*sc}); }
 function a5nearest(e){ const to=a5toPx(); const pt=a5svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const p=pt.matrixTransform(a5svg.getScreenCTM().inverse()); let bi=-1,bd=1e9; a5lights.forEach((q,j)=>{ const {cx,cy}=to(q.x,q.y); const d=Math.hypot(p.x-cx,p.y-cy); if(d<bd){bd=d;bi=j;} }); return {i:bi,dist:bd}; }
 function a5placeLightEl(i){ const g=document.getElementById('lpN'+i); if(!g)return; const {cx,cy}=a5toPx()(a5lights[i].x,a5lights[i].y); g.querySelectorAll('circle').forEach(c=>{ c.setAttribute('cx',cx); c.setAttribute('cy',cy); }); const t=g.querySelector('text'); if(t){ t.setAttribute('x',cx); t.setAttribute('y',cy-15); } }
+function a5push(){ a5undo.push({lights:a5lights.map(p=>({x:p.x,y:p.y})),strips:a5strips.map(t=>({x1:t.x1,y1:t.y1,x2:t.x2,y2:t.y2})),touched:a5touched}); if(a5undo.length>A5UNDO_MAX)a5undo.shift(); a5refreshUndoBtn(); }
+function a5undoOne(){ if(!a5undo.length)return; const s=a5undo.pop(); a5lights=s.lights.map(p=>({x:p.x,y:p.y})); a5strips=s.strips.map(t=>({x1:t.x1,y1:t.y1,x2:t.x2,y2:t.y2})); a5touched=s.touched; a5draw(); a5refreshUndoBtn(); }
+function a5refreshUndoBtn(){ const b=$('a5_undo'); if(b)b.disabled=!a5undo.length; }
 a5svg.addEventListener('pointerdown',e=>{
   e.preventDefault();
   const m=a5clientToM(e);
-  if(a5mode==='del'){ const n=a5nearest(e); if(n.i>=0 && n.dist<=30){ a5lights.splice(n.i,1); a5touched=true; a5draw(); } return; }
+  if(a5mode==='del'){ const n=a5nearest(e); if(n.i>=0 && n.dist<=30){ a5push(); a5lights.splice(n.i,1); a5touched=true; a5draw(); } return; }
   if(a5mode==='strip'){ a5stripDraw={x1:m.x,y1:m.y,x2:m.x,y2:m.y}; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} a5draw(); return; }
   const n=a5nearest(e);
-  if(n.i>=0 && n.dist<=28){ a5drag=n.i; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} }
-  else { a5lights.push(m); a5touched=true; a5drag=a5lights.length-1; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} a5draw(); }
+  if(n.i>=0 && n.dist<=28){ a5push(); a5drag=n.i; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} }
+  else { a5push(); a5lights.push(m); a5touched=true; a5drag=a5lights.length-1; try{a5svg.setPointerCapture(e.pointerId);}catch(_){} a5draw(); }
 });
 a5svg.addEventListener('pointermove',e=>{
   if(a5drag!=null){ a5lights[a5drag]=a5clientToM(e); a5touched=true; a5placeLightEl(a5drag); a5stats(); }
   else if(a5stripDraw){ const m=a5clientToM(e); a5stripDraw.x2=m.x; a5stripDraw.y2=m.y; a5draw(); }
 });
-function a5end(){ if(a5drag!=null){ a5drag=null; a5draw(); } if(a5stripDraw){ if(Math.hypot(a5stripDraw.x2-a5stripDraw.x1,a5stripDraw.y2-a5stripDraw.y1)>0.05){ a5strips.push({x1:a5stripDraw.x1,y1:a5stripDraw.y1,x2:a5stripDraw.x2,y2:a5stripDraw.y2}); } a5stripDraw=null; a5draw(); } }
+function a5end(){ if(a5drag!=null){ a5drag=null; a5draw(); } if(a5stripDraw){ if(Math.hypot(a5stripDraw.x2-a5stripDraw.x1,a5stripDraw.y2-a5stripDraw.y1)>0.05){ a5push(); a5strips.push({x1:a5stripDraw.x1,y1:a5stripDraw.y1,x2:a5stripDraw.x2,y2:a5stripDraw.y2}); } a5stripDraw=null; a5draw(); } }
 a5svg.addEventListener('pointerup',a5end);
 a5svg.addEventListener('pointercancel',a5end);
-['a5_add','a5_del','a5_strip','a5_reset','a5_clear'].forEach(id=>{ const b=$(id); if(!b)return; b.addEventListener('click',()=>{
-  if(id==='a5_add'){ a5lights.push({x:+$('a5_L').value/2,y:+$('a5_W').value/2}); a5touched=true; a5draw(); }
+['a5_add','a5_del','a5_strip','a5_reset','a5_clear','a5_undo'].forEach(id=>{ const b=$(id); if(!b)return; b.addEventListener('click',()=>{
+  if(id==='a5_add'){ a5push(); a5lights.push({x:+$('a5_L').value/2,y:+$('a5_W').value/2}); a5touched=true; a5draw(); }
   else if(id==='a5_del'){ a5mode=(a5mode==='del')?'drag':'del'; $('a5_del').classList.toggle('on',a5mode==='del'); $('a5_strip').classList.remove('on'); a5stripPts=[]; a5stripDraw=null; a5draw(); $('a5_modeTip').textContent=a5mode==='del'?'删灯模式：点击灯位即可删除（靠近也能点中）。':'拖动圆点可手动定位（点不中也能抓住）；点空白处新增一盏。'; }
   else if(id==='a5_strip'){ a5mode=(a5mode==='strip')?'drag':'strip'; $('a5_strip').classList.toggle('on',a5mode==='strip'); $('a5_del').classList.remove('on'); a5stripPts=[]; a5stripDraw=null; a5draw(); $('a5_modeTip').textContent=a5mode==='strip'?'灯带模式：按住并拖动，画出一条灯带。':'拖动圆点可手动定位（点不中也能抓住）；点空白处新增一盏。'; }
-  else if(id==='a5_reset'){ a5init(); a5draw(); }
-  else if(id==='a5_clear'){ a5lights=[]; a5strips=[]; a5stripPts=[]; a5touched=true; a5draw(); }
+  else if(id==='a5_reset'){ a5push(); a5init(); a5draw(); }
+  else if(id==='a5_clear'){ a5push(); a5lights=[]; a5strips=[]; a5stripPts=[]; a5touched=true; a5draw(); }
+  else if(id==='a5_undo'){ a5undoOne(); }
 }); });
+document.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ const t=e.target; if(t&&/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName))return; e.preventDefault(); a5undoOne(); } });
 watch(['a5_L','a5_W','a5_H','a5_N'],calc5);
-function syncFrom3(){$('a5_L').value=$('a3_L').value;$('a5_W').value=$('a3_W').value;$('a5_N').value=$('a3_N').textContent;a5touched=false;a5init();a5draw();}
+function syncFrom3(){$('a5_L').value=$('a3_L').value;$('a5_W').value=$('a3_W').value;$('a5_N').value=$('a3_N').textContent;a5push();a5touched=false;a5init();a5draw();}
 
 /* ⑥ 调光场景 */
 const SCENES=[
